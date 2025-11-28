@@ -75,6 +75,12 @@ export type FitnessCenterMembersResponse = {
   members: FitnessCenterMember[];
 };
 
+export type DailyCheckinsResponse = {
+  date: string;
+  fitnessCenterId: number;
+  members: (MemberSearchMember & { check_in_time: string })[];
+};
+
 export type MemberSearchMember = {
   id: number;
   fitness_center_id: number;
@@ -276,6 +282,28 @@ export async function fetchFitnessCenterMembers(
   }
 
   const data = (await res.json()) as FitnessCenterMembersResponse;
+  return data;
+}
+
+export async function fetchDailyCheckins(
+  fitnessCenterId: number,
+  date: string,
+): Promise<DailyCheckinsResponse> {
+  const url = `${BASE_URL}/check-ins?date=${date}&fitnessCenterId=${fitnessCenterId}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to load daily check-ins");
+  }
+
+  const data = (await res.json()) as DailyCheckinsResponse;
   return data;
 }
 

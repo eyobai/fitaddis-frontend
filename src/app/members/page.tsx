@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMembersController } from "./controllers/useMembersController";
 import { useAddMemberController } from "./controllers/useAddMemberController";
 import { useCheckinController } from "./controllers/useCheckinController";
+import { useDailyCheckinsController } from "./controllers/useDailyCheckinsController";
 
 const TABS = [
   { id: "members", label: "Members" },
@@ -24,8 +25,26 @@ export default function MembersPage() {
   const [activeMemberSubTab, setActiveMemberSubTab] =
     useState<MemberSubTabId>("members");
   const { data, loading, error } = useMembersController();
+  const [fitnessCenterId, setFitnessCenterId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const storedFitnessCenter = localStorage.getItem("fitnessCenter");
+    if (storedFitnessCenter) {
+      try {
+        const parsed = JSON.parse(storedFitnessCenter) as { id?: number };
+        if (parsed.id) {
+          setFitnessCenterId(parsed.id);
+        }
+      } catch (e) {
+        console.error("Failed to parse fitnessCenter from localStorage", e);
+      }
+    }
+  }, []);
 
   const checkin = useCheckinController();
+  const dailyCheckins = useDailyCheckinsController(fitnessCenterId);
   const [showCheckinDetails, setShowCheckinDetails] = useState(false);
   const [showNameResults, setShowNameResults] = useState(false);
 
@@ -176,8 +195,9 @@ export default function MembersPage() {
         )}
 
         {activeTab === "checkin" && (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-600">
-            <div className="mb-4 flex gap-6 border-b border-slate-200 pb-2 text-sm">
+          <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-600 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div className="mb-4 flex gap-6 border-b border-slate-200 pb-2 text-sm">
               <button
                 type="button"
                 onClick={() => {
@@ -206,9 +226,9 @@ export default function MembersPage() {
               >
                 Name Search
               </button>
-            </div>
+              </div>
 
-            {checkin.mode === "code" && (
+              {checkin.mode === "code" && (
               <div className="flex flex-col items-center gap-6">
                 <div className="w-full max-w-xs rounded-full bg-slate-100 px-4 py-2 text-center text-lg font-semibold tracking-[0.3em] text-slate-900">
                   {checkin.codeInput || "----"}
@@ -252,9 +272,9 @@ export default function MembersPage() {
                   </button>
                 </div>
               </div>
-            )}
+              )}
 
-            {checkin.mode === "name" && (
+              {checkin.mode === "name" && (
               <div className="flex flex-col gap-4 max-w-md">
                 <input
                   type="text"
@@ -275,9 +295,9 @@ export default function MembersPage() {
                   Search
                 </button>
               </div>
-            )}
+              )}
 
-            <div className="mt-6 space-y-4">
+              <div className="mt-6 space-y-4">
               {checkin.loading && <p>Searching member...</p>}
               {checkin.error && !checkin.loading && (
                 <p className="text-red-600 text-sm">{checkin.error}</p>
@@ -376,6 +396,57 @@ export default function MembersPage() {
                     )}
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
+
+            <div className="border-l border-slate-200 pl-0 md:pl-4 md:ml-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Daily Check-ins
+                </h2>
+                <input
+                  type="date"
+                  value={dailyCheckins.date}
+                  onChange={(e) => dailyCheckins.setDate(e.target.value)}
+                  className="rounded-md border border-slate-300 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-slate-500"
+                />
+              </div>
+              {dailyCheckins.loading && (
+                <p className="text-xs text-slate-600">Loading check-ins...</p>
+              )}
+              {dailyCheckins.error && !dailyCheckins.loading && (
+                <p className="text-xs text-red-600">{dailyCheckins.error}</p>
+              )}
+              {!dailyCheckins.loading &&
+                !dailyCheckins.error &&
+                dailyCheckins.data &&
+                dailyCheckins.data.members.length === 0 && (
+                  <p className="text-xs text-slate-500">
+                    No check-ins for this date.
+                  </p>
+                )}
+              {dailyCheckins.data && dailyCheckins.data.members.length > 0 && (
+                <ul className="mt-2 max-h-64 overflow-y-auto divide-y divide-slate-100 text-xs">
+                  {dailyCheckins.data.members.map((m) => (
+                    <li key={m.id} className="py-2 flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          {m.first_name} {m.last_name}
+                        </div>
+                        <div className="text-[11px] text-slate-600">
+                          {m.email} · {m.phone_number}
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        {new Date(m.check_in_time).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           </div>
