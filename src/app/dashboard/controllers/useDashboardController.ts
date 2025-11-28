@@ -9,12 +9,21 @@ import {
   fetchFitnessCenterTotalExpected,
 } from "@/lib/api/fitnessCenterService";
 
+type RecentActivityItem = {
+  id: string | number;
+  title: string;
+  subtitle: string;
+  userInitials: string;
+  date: string;
+};
+
 type DashboardData = {
   totalMembers: number;
   activeMembers: number;
   inactiveMembers: number;
   totalPaidThisMonth: number;
   totalExpectedThisMonth: number;
+  recentActivity?: RecentActivityItem[];
 };
 
 export function useDashboardController(fitnessCenterId: number = 0) {
