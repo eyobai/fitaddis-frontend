@@ -77,14 +77,57 @@ export function useAddMemberController(onSuccess?: () => void) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  function validateForm(): string | null {
+    if (!form.firstName.trim()) {
+      return "First name is required";
+    }
+    if (!form.lastName.trim()) {
+      return "Last name is required";
+    }
+    if (!form.dateOfBirth) {
+      return "Date of birth is required";
+    }
+    if (!form.phoneNumber.trim()) {
+      return "Phone number is required";
+    }
+    // Basic phone validation (at least 9 digits)
+    const phoneDigits = form.phoneNumber.replace(/\D/g, "");
+    if (phoneDigits.length < 9) {
+      return "Phone number must have at least 9 digits";
+    }
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      return "Please enter a valid email address";
+    }
+    if (!form.joinDate) {
+      return "Join date is required";
+    }
+    if (!form.city.trim()) {
+      return "City is required";
+    }
+    if (!form.membershipPlanId) {
+      return "Please select a membership plan";
+    }
+    if (!form.emergencyContactName.trim()) {
+      return "Emergency contact name is required";
+    }
+    if (!form.emergencyContactPhoneNumber.trim()) {
+      return "Emergency contact phone number is required";
+    }
+    if (!form.emergencyContactRelation.trim()) {
+      return "Emergency contact relation is required";
+    }
+    return null;
+  }
+
   async function handleSubmit() {
     if (!fitnessCenterId) {
       setError("No fitness center available");
       return;
     }
 
-    if (!form.membershipPlanId) {
-      setError("Please select a membership plan");
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -114,14 +157,23 @@ export function useAddMemberController(onSuccess?: () => void) {
         },
       };
 
+      console.log("Registration payload:", JSON.stringify(payload, null, 2));
       await registerMember(payload);
       setSuccessMessage("Member registered successfully.");
 
       if (onSuccess) {
         onSuccess();
       }
-    } catch (err) {
-      setError("Failed to register member. Please try again.");
+    } catch (err: unknown) {
+      console.error("Registration error:", err);
+      let errorMessage = "Failed to register member. Please try again.";
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === "object" && err !== null && "response" in err) {
+        const axiosErr = err as { response?: { data?: { message?: string } } };
+        errorMessage = axiosErr.response?.data?.message || errorMessage;
+      }
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
