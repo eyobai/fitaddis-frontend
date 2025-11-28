@@ -548,6 +548,21 @@ export default function MembersPage() {
                   {/* Selected Member Details */}
                   {checkin.member && showCheckinDetails && (
                     <div className="border-t border-slate-200 bg-slate-50 p-6">
+                      {/* Member Name Header */}
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="h-14 w-14 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white text-lg font-bold shadow-md">
+                          {checkin.member.first_name[0]}{checkin.member.last_name[0]}
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold text-slate-900">
+                            {checkin.member.first_name} {checkin.member.last_name}
+                          </div>
+                          <div className="text-sm text-slate-500">
+                            Code: <span className="font-mono font-semibold">{checkin.member.check_in_code}</span>
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                         <div className="bg-white rounded-lg p-3 border border-slate-200">
                           <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Phone</div>
