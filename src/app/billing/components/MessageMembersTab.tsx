@@ -628,25 +628,26 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
                 <th className="px-6 py-4">Phone</th>
                 <th className="px-6 py-4">Amount</th>
                 <th className="px-6 py-4">Billing date</th>
+                <th className="px-6 py-4">Days Passed</th>
                 <th className="px-6 py-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
               {messageLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-6 text-center text-slate-500">
+                  <td colSpan={7} className="px-6 py-6 text-center text-slate-500">
                     Loading members...
                   </td>
                 </tr>
               ) : messageError ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-6 text-center text-rose-600">
+                  <td colSpan={7} className="px-6 py-6 text-center text-rose-600">
                     {messageError}
                   </td>
                 </tr>
               ) : visibleMessageMembers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-6 text-center text-slate-500">
+                  <td colSpan={7} className="px-6 py-6 text-center text-slate-500">
                     No overdue members for this range
                   </td>
                 </tr>
@@ -670,6 +671,17 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
                       {formatCurrency(Number(member.amount))}
                     </td>
                     <td className="px-6 py-4 text-slate-600">{formatDate(member.billing_date)}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                        (member.days_overdue ?? 0) > 30
+                          ? "border border-red-100 bg-red-50 text-red-700"
+                          : (member.days_overdue ?? 0) > 14
+                          ? "border border-amber-100 bg-amber-50 text-amber-700"
+                          : "border border-slate-100 bg-slate-50 text-slate-700"
+                      }`}>
+                        {member.days_overdue ?? 0} days
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => handleSendMemberMessage(member)}

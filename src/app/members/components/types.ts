@@ -17,6 +17,7 @@ export type MemberSubTabId = (typeof MEMBER_SUB_TABS)[number]["id"];
 export type CheckinMode = "code" | "name";
 
 export type MemberTypeOption = "member" | "visitor";
+export type RegistrationStep = "select-type" | "form";
 
 // Re-export types for convenience
 export type { FitnessCenterMember, MemberSearchMember, DailyCheckinsResponse, FitnessCenterMembershipPlansResponse };
@@ -81,8 +82,11 @@ export interface AddMemberControllerReturn {
   submitting: boolean;
   error: string | null;
   successMessage: string | null;
-  memberType: MemberTypeOption;
-  setMemberType: (type: MemberTypeOption) => void;
+  memberType: MemberTypeOption | null;
+  setMemberType: (type: MemberTypeOption | null) => void;
+  step: RegistrationStep;
+  selectType: (type: MemberTypeOption) => void;
+  reset: () => void;
   form: AddMemberFormData;
   handleChange: (field: keyof AddMemberFormData, value: string) => void;
   handleSubmit: () => Promise<void>;

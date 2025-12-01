@@ -1,11 +1,16 @@
 import { useState, useMemo } from "react";
 import { MembersTable } from "./MembersTable";
+import { VisitorsTable } from "./VisitorsTable";
 import { MEMBER_SUB_TABS, MemberSubTabId, FitnessCenterMember } from "./types";
+import type { FitnessCenterVisitor } from "@/lib/api/fitnessCenterService";
 
 interface MembersTabProps {
   data: { members: FitnessCenterMember[] } | null;
   loading: boolean;
   error: string | null;
+  visitorsData: { visitors: FitnessCenterVisitor[]; totalVisitors: number } | null;
+  visitorsLoading: boolean;
+  visitorsError: string | null;
   onAddMember: () => void;
 }
 
@@ -13,6 +18,9 @@ export function MembersTab({
   data,
   loading,
   error,
+  visitorsData,
+  visitorsLoading,
+  visitorsError,
   onAddMember,
 }: MembersTabProps) {
   const [activeMemberSubTab, setActiveMemberSubTab] =
@@ -75,7 +83,7 @@ export function MembersTab({
               d="M12 6v6m0 0v6m0-6h6m-6 0H6"
             />
           </svg>
-          Add Member
+          Add Member / Visitor
         </button>
       </div>
 
@@ -103,6 +111,15 @@ export function MembersTab({
                   {filteredMembers.length}
                 </span>
               )}
+              {tab.id === "visitors" && visitorsData && (
+                <span
+                  className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
+                    isActive ? "bg-slate-100" : "bg-slate-200/50"
+                  }`}
+                >
+                  {visitorsData.totalVisitors}
+                </span>
+              )}
             </button>
           );
         })}
@@ -121,44 +138,12 @@ export function MembersTab({
 
       {/* Visitors Tab */}
       {activeMemberSubTab === "visitors" && (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 shadow-sm">
-          <div className="flex flex-col items-center justify-center text-center">
-            <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-              <svg
-                className="h-8 w-8 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900">Visitors</h3>
-            <p className="mt-1 text-sm text-slate-500 max-w-sm">
-              Track and manage guest visitors to your fitness center.
-            </p>
-            <button className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors">
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-              Add Visitor
-            </button>
-          </div>
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <VisitorsTable
+            visitors={visitorsData?.visitors ?? []}
+            loading={visitorsLoading}
+            error={visitorsError}
+          />
         </div>
       )}
     </div>

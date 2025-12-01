@@ -75,12 +75,59 @@ export type FitnessCenterMembersResponse = {
   members: FitnessCenterMember[];
 };
 
+export type FitnessCenterVisitor = {
+  id: number;
+  fitness_center_id: number;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  gender: string;
+  visit_date: string;
+  created_at: string;
+};
+
+export type FitnessCenterVisitorsResponse = {
+  fitnessCenterId: number;
+  totalVisitors: number;
+  visitors: FitnessCenterVisitor[];
+};
+
+export type NoCheckinMember = {
+  id: number;
+  fitness_center_id: number;
+  member_type_id: number;
+  first_name: string;
+  last_name: string;
+  gender: string;
+  date_of_birth: string;
+  phone_number: string;
+  email: string;
+  check_in_code: string;
+  join_date: string;
+  city: string;
+  specific_location: string;
+  membership_plan_id: number;
+  referral_source_id: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type NoCheckinMembersResponse = {
+  fitnessCenterId: number;
+  startDate: string;
+  endDate: string;
+  totalMembers: number;
+  members: NoCheckinMember[];
+};
+
 export type FitnessCenterOverdueMember = {
   billing_id: number;
   member_id: number;
   amount: string;
   billing_date: string;
   status: string;
+  due_date: string;
+  days_overdue: number;
   first_name: string;
   last_name: string;
   phone_number: string;
@@ -401,6 +448,51 @@ export async function fetchFitnessCenterMembers(
   }
 
   const data = (await res.json()) as FitnessCenterMembersResponse;
+  return data;
+}
+
+export async function fetchFitnessCenterVisitors(
+  fitnessCenterId: number,
+): Promise<FitnessCenterVisitorsResponse> {
+  const res = await fetch(
+    `${BASE_URL}/fitness-center/${fitnessCenterId}/visitors`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    } as RequestInit,
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to load visitors");
+  }
+
+  const data = (await res.json()) as FitnessCenterVisitorsResponse;
+  return data;
+}
+
+export async function fetchNoCheckinMembers(
+  fitnessCenterId: number,
+  startDate: string,
+  endDate: string,
+): Promise<NoCheckinMembersResponse> {
+  const url = `${BASE_URL}/fitness-center/${fitnessCenterId}/members/no-checkin?startDate=${startDate}&endDate=${endDate}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to load no-checkin members");
+  }
+
+  const data = (await res.json()) as NoCheckinMembersResponse;
   return data;
 }
 

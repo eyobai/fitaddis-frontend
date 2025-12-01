@@ -22,6 +22,7 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<FitnessCenterOverdueMember | null>(null);
   const [editableAmount, setEditableAmount] = useState("0");
+  const [billingDate, setBillingDate] = useState(new Date().toISOString().slice(0, 10));
 
   useEffect(() => {
     if (!fitnessCenterId) return;
@@ -53,22 +54,23 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
   const openConfirmModal = (member: FitnessCenterOverdueMember) => {
     setSelectedMember(member);
     setEditableAmount(member.amount);
+    setBillingDate(new Date().toISOString().slice(0, 10));
     setShowConfirmModal(true);
   };
 
   const handlePayNow = async (
     member: FitnessCenterOverdueMember,
     overrideAmount?: string,
+    overrideBillingDate?: string,
   ) => {
     setPaymentMessage(null);
     setPayingMemberId(member.member_id);
 
     try {
-      const paymentDate = new Date().toISOString().slice(0, 10);
       const payload = {
         memberId: member.member_id,
         amount: Number(overrideAmount ?? member.amount),
-        billingDate: paymentDate,
+        billingDate: overrideBillingDate ?? new Date().toISOString().slice(0, 10),
         status: "paid" as const,
       };
 
@@ -107,7 +109,7 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
 
   const handleConfirmPayment = async () => {
     if (!selectedMember) return;
-    await handlePayNow(selectedMember, editableAmount);
+    await handlePayNow(selectedMember, editableAmount, billingDate);
     setShowConfirmModal(false);
     setSelectedMember(null);
   };
@@ -151,19 +153,20 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
                   <th className="px-6 py-4">Amount</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Billing date</th>
+                  <th className="px-6 py-4">Days Passed</th>
                   <th className="px-6 py-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {overdueLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-6 text-center text-slate-500">
+                    <td colSpan={8} className="px-6 py-6 text-center text-slate-500">
                       Loading overdue members...
                     </td>
                   </tr>
                 ) : overdueMembers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-6 text-center text-slate-500">
+                    <td colSpan={8} className="px-6 py-6 text-center text-slate-500">
                       No overdue members 🎉
                     </td>
                   </tr>
@@ -192,6 +195,17 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-slate-600">{formatDate(member.billing_date)}</td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                            member.days_overdue > 30
+                              ? "border border-red-100 bg-red-50 text-red-700"
+                              : member.days_overdue > 14
+                              ? "border border-amber-100 bg-amber-50 text-amber-700"
+                              : "border border-slate-100 bg-slate-50 text-slate-700"
+                          }`}>
+                            {member.days_overdue} days
+                          </span>
+                        </td>
                         <td className="px-6 py-4 text-center">
                           <button
                             onClick={() => openConfirmModal(member)}
@@ -216,6 +230,8 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
           selectedMember={selectedMember}
           editableAmount={editableAmount}
           setEditableAmount={setEditableAmount}
+          billingDate={billingDate}
+          setBillingDate={setBillingDate}
           onConfirm={handleConfirmPayment}
           onCancel={() => {
             setShowConfirmModal(false);
