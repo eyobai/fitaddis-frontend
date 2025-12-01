@@ -58,6 +58,14 @@ export default function MembersPage() {
     }
   });
 
+  useEffect(() => {
+    if (!checkin.error) return;
+    if (checkin.error.toLowerCase().includes("subscription payment is pending")) {
+      setShowNameResults(false);
+      setShowCheckinDetails(false);
+    }
+  }, [checkin.error]);
+
   const filteredMembers = useMemo(() => {
     if (!data?.members) return [];
     const term = searchTerm.trim().toLowerCase();
@@ -658,7 +666,7 @@ export default function MembersPage() {
                     {dailyCheckins.data.members.map((m) => {
                       const initials = `${m.first_name[0]}${m.last_name[0]}`.toUpperCase();
                       return (
-                        <div key={m.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+                        <div key={`${m.id}-${m.check_in_time}`} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
                           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white text-sm font-semibold shadow-sm">
                             {initials}
                           </div>

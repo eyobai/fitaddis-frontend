@@ -29,10 +29,44 @@ export function useCheckinController() {
   }
 
   async function handleCheckIn(memberId: number) {
+    let targetMember =
+      member?.id === memberId
+        ? member
+        : nameResults.find((m) => m.id === memberId) ?? null;
+
+    if (!targetMember) {
+      setError("Select a member before checking in");
+      setCheckinSuccess(null);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       setCheckinSuccess(null);
+
+      const hasBillingInfo = Boolean(
+        targetMember.latest_billing_status ?? targetMember.latestBillingStatus,
+      );
+
+      if (!hasBillingInfo && targetMember.check_in_code) {
+        const refreshed = await searchMemberByCheckInCode(targetMember.check_in_code);
+        targetMember = refreshed.member;
+        setMember(refreshed.member);
+      }
+
+      const billingStatus =
+        targetMember.latest_billing_status?.toLowerCase() ??
+        targetMember.latestBillingStatus?.toLowerCase();
+      const paymentPending = billingStatus && billingStatus !== "paid";
+
+      if (paymentPending) {
+        setError(
+          "This member's subscription payment is pending. Please collect payment to renew before check-in.",
+        );
+        return;
+      }
+
       await recordMemberCheckIn({ memberId });
       setCheckinSuccess("Member checked in successfully.");
     } catch (e) {

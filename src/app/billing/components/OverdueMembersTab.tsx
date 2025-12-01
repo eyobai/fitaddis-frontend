@@ -1,0 +1,229 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  fetchFitnessCenterOverdueMembers,
+  FitnessCenterOverdueMember,
+} from "@/lib/api/fitnessCenterService";
+import { formatCurrency, formatDate, ToastMessage } from "../utils/billingUtils";
+import { PaymentConfirmModal } from "./PaymentConfirmModal";
+
+interface OverdueMembersTabProps {
+  fitnessCenterId: number | null;
+}
+
+export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
+  const [overdueMembers, setOverdueMembers] = useState<FitnessCenterOverdueMember[]>([]);
+  const [overdueLoading, setOverdueLoading] = useState(false);
+  const [overdueError, setOverdueError] = useState<string | null>(null);
+  const [totalOverdue, setTotalOverdue] = useState(0);
+  const [payingMemberId, setPayingMemberId] = useState<number | null>(null);
+  const [paymentMessage, setPaymentMessage] = useState<ToastMessage>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<FitnessCenterOverdueMember | null>(null);
+  const [editableAmount, setEditableAmount] = useState("0");
+
+  useEffect(() => {
+    if (!fitnessCenterId) return;
+
+    let isMounted = true;
+    setOverdueLoading(true);
+    setOverdueError(null);
+
+    fetchFitnessCenterOverdueMembers(fitnessCenterId)
+      .then((res) => {
+        if (!isMounted) return;
+        setOverdueMembers(res.members);
+        setTotalOverdue(res.totalOverdueMembers);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setOverdueError("Unable to load overdue members");
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setOverdueLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fitnessCenterId]);
+
+  const openConfirmModal = (member: FitnessCenterOverdueMember) => {
+    setSelectedMember(member);
+    setEditableAmount(member.amount);
+    setShowConfirmModal(true);
+  };
+
+  const handlePayNow = async (
+    member: FitnessCenterOverdueMember,
+    overrideAmount?: string,
+  ) => {
+    setPaymentMessage(null);
+    setPayingMemberId(member.member_id);
+
+    try {
+      const paymentDate = new Date().toISOString().slice(0, 10);
+      const payload = {
+        memberId: member.member_id,
+        amount: Number(overrideAmount ?? member.amount),
+        billingDate: paymentDate,
+        status: "paid" as const,
+      };
+
+      const res = await fetch("http://localhost:3000/make-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error("Payment request failed");
+      }
+
+      setPaymentMessage({
+        type: "success",
+        text: `Payment sent for ${member.first_name} ${member.last_name}`,
+      });
+
+      setOverdueMembers((prev) =>
+        prev.map((item) =>
+          item.member_id === member.member_id
+            ? { ...item, status: "paid" }
+            : item,
+        ),
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to submit payment";
+      setPaymentMessage({ type: "error", text: message });
+    } finally {
+      setPayingMemberId(null);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!selectedMember) return;
+    await handlePayNow(selectedMember, editableAmount);
+    setShowConfirmModal(false);
+    setSelectedMember(null);
+  };
+
+  return (
+    <>
+      <section className="rounded-2xl bg-white border border-slate-200 shadow-sm">
+        <div className="flex flex-col gap-2 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Overdue Members</h2>
+            <p className="text-sm text-slate-500">
+              Members with pending invoices and their latest billing details.
+            </p>
+          </div>
+          <div className="rounded-full bg-red-50 px-4 py-1 text-sm font-semibold text-red-600">
+            {overdueLoading ? "Loading..." : `${totalOverdue} overdue`}
+          </div>
+        </div>
+
+        {overdueError ? (
+          <p className="px-6 py-5 text-sm text-rose-600">{overdueError}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            {paymentMessage && (
+              <div
+                className={`mx-6 my-4 rounded-xl border px-4 py-3 text-sm font-medium ${
+                  paymentMessage.type === "success"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border-rose-200 bg-rose-50 text-rose-700"
+                }`}
+              >
+                {paymentMessage.text}
+              </div>
+            )}
+            <table className="min-w-full divide-y divide-slate-100">
+              <thead>
+                <tr className="bg-slate-50/60 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="px-6 py-4">Member</th>
+                  <th className="px-6 py-4">Phone</th>
+                  <th className="px-6 py-4">Plan</th>
+                  <th className="px-6 py-4">Amount</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Billing date</th>
+                  <th className="px-6 py-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                {overdueLoading ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-6 text-center text-slate-500">
+                      Loading overdue members...
+                    </td>
+                  </tr>
+                ) : overdueMembers.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-6 text-center text-slate-500">
+                      No overdue members 🎉
+                    </td>
+                  </tr>
+                ) : (
+                  overdueMembers.map((member) => {
+                    const fullName = `${member.first_name} ${member.last_name}`;
+                    return (
+                      <tr key={`${member.billing_id}-${member.member_id}`} className="hover:bg-slate-50/60">
+                        <td className="px-6 py-4 font-semibold text-slate-900">
+                          {fullName}
+                          <div className="text-xs font-normal text-slate-400">ID: {member.member_id}</div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">{member.phone_number}</td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+                            {member.membership_plan_name}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-slate-900">
+                          {formatCurrency(Number(member.amount))}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-amber-50 px-3 py-1 text-xs font-semibold capitalize text-amber-700">
+                            <span className="h-2 w-2 rounded-full bg-amber-500" />
+                            {member.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">{formatDate(member.billing_date)}</td>
+                        <td className="px-6 py-4 text-center">
+                          <button
+                            onClick={() => openConfirmModal(member)}
+                            disabled={payingMemberId === member.member_id}
+                            className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-slate-400"
+                          >
+                            {payingMemberId === member.member_id ? "Processing..." : "Pay now"}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {showConfirmModal && selectedMember && (
+        <PaymentConfirmModal
+          selectedMember={selectedMember}
+          editableAmount={editableAmount}
+          setEditableAmount={setEditableAmount}
+          onConfirm={handleConfirmPayment}
+          onCancel={() => {
+            setShowConfirmModal(false);
+            setSelectedMember(null);
+          }}
+          isProcessing={payingMemberId === selectedMember.member_id}
+        />
+      )}
+    </>
+  );
+}

@@ -75,6 +75,52 @@ export type FitnessCenterMembersResponse = {
   members: FitnessCenterMember[];
 };
 
+export type FitnessCenterOverdueMember = {
+  billing_id: number;
+  member_id: number;
+  amount: string;
+  billing_date: string;
+  status: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  email: string;
+  check_in_code: string;
+  membership_plan_name: string;
+  duration_months: number;
+};
+
+export type FitnessCenterOverdueMembersResponse = {
+  fitnessCenterId: number;
+  totalOverdueMembers: number;
+  members: FitnessCenterOverdueMember[];
+};
+
+export type FitnessCenterExpiringMember = {
+  member_id: number;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  email: string;
+  check_in_code: string;
+  membership_plan_name: string;
+  duration_months: number;
+  last_billing_date: string;
+  last_billing_status: string;
+  last_billing_amount: string;
+  expiry_date: string;
+  days_until_expiry?: {
+    days: number;
+  };
+};
+
+export type FitnessCenterExpiringMembersResponse = {
+  fitnessCenterId: number;
+  days: number;
+  totalMembers: number;
+  members: FitnessCenterExpiringMember[];
+};
+
 export type DailyCheckinsResponse = {
   date: string;
   fitnessCenterId: number;
@@ -99,6 +145,12 @@ export type MemberSearchMember = {
   referral_source_id: number;
   created_at: string;
   updated_at: string;
+  latest_billing_status?: string;
+  latest_billing_amount?: string;
+  latest_billing_date?: string;
+  latestBillingStatus?: string;
+  latestBillingAmount?: string;
+  latestBillingDate?: string;
 };
 
 export type MemberSearchByCodeResponse = {
@@ -170,6 +222,73 @@ export async function fetchFitnessCenterTotalMembers(
   }
 
   const data = (await res.json()) as FitnessCenterTotalMembersResponse;
+  return data;
+}
+
+export async function fetchFitnessCenterOverdueMembers(
+  fitnessCenterId: number,
+): Promise<FitnessCenterOverdueMembersResponse> {
+  const res = await fetch(
+    `${BASE_URL}/fitness-center/${fitnessCenterId}/billings/overdue-members`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    } as RequestInit,
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to load overdue members");
+  }
+
+  const data = (await res.json()) as FitnessCenterOverdueMembersResponse;
+  return data;
+}
+
+export async function fetchExpiringMembers(
+  fitnessCenterId: number,
+  days: number,
+): Promise<FitnessCenterExpiringMembersResponse> {
+  const url = `${BASE_URL}/fitness-center/${fitnessCenterId}/members/expiring?days=${days}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to load expiring members");
+  }
+
+  const data = (await res.json()) as FitnessCenterExpiringMembersResponse;
+  return data;
+}
+
+export async function fetchOverdueMembersByInterval(
+  fitnessCenterId: number,
+  startDate: string,
+  endDate: string,
+): Promise<FitnessCenterOverdueMembersResponse> {
+  const url = `${BASE_URL}/fitness-center/${fitnessCenterId}/billings/overdue-members/interval?startDate=${startDate}&endDate=${endDate}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to load overdue members for interval");
+  }
+
+  const data = (await res.json()) as FitnessCenterOverdueMembersResponse;
   return data;
 }
 
@@ -384,6 +503,61 @@ export async function registerMember(
 
   if (!res.ok) {
     throw new Error("Failed to register member");
+  }
+}
+
+export async function sendMemberSms(payload: {
+  to: string;
+  message: string;
+
+}): Promise<void> {
+  const res = await fetch(`${BASE_URL}/sms/send`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  } as RequestInit);
+
+  if (!res.ok) {
+    let message = "Failed to send SMS";
+    try {
+      const data = await res.json();
+      message = data?.message ?? message;
+    } catch (err) {
+      const text = await res.text();
+      if (text) message = text;
+    }
+    throw new Error(message);
+  }
+}
+
+export async function sendBulkSms(payload: {
+  recipients: string[];
+  message: string;
+ 
+  campaign?: string;
+  createCallback?: string;
+  statusCallback?: string;
+}): Promise<void> {
+  const res = await fetch(`${BASE_URL}/sms/bulk-send`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  } as RequestInit);
+
+  if (!res.ok) {
+    let message = "Failed to send bulk SMS";
+    try {
+      const data = await res.json();
+      message = data?.message ?? message;
+    } catch (err) {
+      const text = await res.text();
+      if (text) message = text;
+    }
+    throw new Error(message);
   }
 }
 

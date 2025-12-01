@@ -13,6 +13,9 @@ export function MemberSelectionModal({
   setShowCheckinDetails,
   onClose,
 }: MemberSelectionModalProps) {
+  const pendingPaymentError = checkin.error
+    ?.toLowerCase()
+    .includes("subscription payment is pending");
   if (checkin.nameResults.length === 0 && !checkin.member) {
     return null;
   }
@@ -175,6 +178,11 @@ export function MemberSelectionModal({
                 Confirm Check-in
               </button>
             </div>
+            {pendingPaymentError && (
+              <p className="mt-3 text-sm font-medium text-rose-600">
+                {checkin.error}
+              </p>
+            )}
             {checkin.checkinSuccess && (
               <div className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-emerald-50 border border-emerald-100 px-4 py-3">
                 <svg
