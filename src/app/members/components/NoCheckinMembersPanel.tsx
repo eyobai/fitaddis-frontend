@@ -59,10 +59,10 @@ export function NoCheckinMembersPanel() {
       setLoading(false);
     }
   };
-
+//bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/30
   return (
     <div className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-      <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4">
+      <div className="bg-gradient-to-r from-violet-500 to-purple-400  px-6 py-4">
         <h2 className="text-lg font-semibold text-white">No Check-in Members</h2>
         <p className="text-sm text-amber-100">
           Find members who haven&apos;t checked in during a date range
@@ -98,7 +98,7 @@ export function NoCheckinMembersPanel() {
             type="button"
             onClick={handleSearch}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:from-amber-600 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:from-amber-600 hover:to-orange-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all disabled:opacity-50"
           >
             {loading ? (
               <>
