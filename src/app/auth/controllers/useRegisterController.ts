@@ -39,7 +39,8 @@ export function useRegisterController() {
         localStorage.setItem("fitnessCenter", JSON.stringify(response.fitnessCenter));
       }
 
-      router.push("/");
+      // Redirect to setup page to add membership plans
+      router.push("/setup");
     } catch (err) {
       setError("Registration failed. Please try again.");
     } finally {

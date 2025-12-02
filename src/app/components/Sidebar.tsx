@@ -33,7 +33,7 @@ const navItems = [
   },
   {
     label: "Marketing",
-    href: "#",
+    href: "/marketing",
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
@@ -111,16 +111,27 @@ export function Sidebar() {
       <div className="px-3 py-4 border-t border-slate-800/50">
         {/* Settings Link */}
         <Link
-          href="#"
-          className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all duration-200 hover:bg-slate-800/50 hover:text-white"
+          href="/settings"
+          className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+            pathname === "/settings"
+              ? "bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-white shadow-sm"
+              : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+          }`}
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-slate-400 transition-all group-hover:bg-slate-700 group-hover:text-white">
+          <span className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all ${
+            pathname === "/settings"
+              ? "bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-md shadow-violet-500/30"
+              : "bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-white"
+          }`}>
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </span>
           <span>Settings</span>
+          {pathname === "/settings" && (
+            <span className="ml-auto h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
+          )}
         </Link>
 
         {/* Logout Button */}

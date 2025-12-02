@@ -582,6 +582,35 @@ export async function fetchFitnessCenterMembershipPlans(
   return data;
 }
 
+export type CreateMembershipPlanPayload = {
+  name: string;
+  durationMonths: number;
+  price: number;
+};
+
+export async function createMembershipPlan(
+  fitnessCenterId: number,
+  payload: CreateMembershipPlanPayload,
+): Promise<MembershipPlan> {
+  const res = await fetch(
+    `${BASE_URL}/fitness-center/${fitnessCenterId}/membership-plans`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    } as RequestInit,
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to create membership plan");
+  }
+
+  const data = (await res.json()) as MembershipPlan;
+  return data;
+}
+
 export async function registerMember(
   payload: RegisterMemberPayload,
 ): Promise<void> {
@@ -601,7 +630,7 @@ export async function registerMember(
 export async function sendMemberSms(payload: {
   to: string;
   message: string;
-
+  sender: string;
 }): Promise<void> {
   const res = await fetch(`${BASE_URL}/sms/send`, {
     method: "POST",
@@ -627,10 +656,7 @@ export async function sendMemberSms(payload: {
 export async function sendBulkSms(payload: {
   recipients: string[];
   message: string;
- 
-  campaign?: string;
-  createCallback?: string;
-  statusCallback?: string;
+  sender: string;
 }): Promise<void> {
   const res = await fetch(`${BASE_URL}/sms/bulk-send`, {
     method: "POST",
