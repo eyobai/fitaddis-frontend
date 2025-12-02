@@ -18,7 +18,7 @@ export default function MembersPage() {
   const [fitnessCenterId, setFitnessCenterId] = useState<number | null>(null);
   const [showAddMember, setShowAddMember] = useState(false);
 
-  const { data, loading, error } = useMembersController();
+  const { data, loading, error, updateMember } = useMembersController();
   const visitors = useVisitorsController();
   const checkin = useCheckinController();
   const dailyCheckins = useDailyCheckinsController(fitnessCenterId);
@@ -66,6 +66,7 @@ export default function MembersPage() {
             visitorsLoading={visitors.loading}
             visitorsError={visitors.error}
             onAddMember={() => setShowAddMember(true)}
+            onMemberUpdated={updateMember}
           />
         )}
 

@@ -12,6 +12,7 @@ interface MembersTabProps {
   visitorsLoading: boolean;
   visitorsError: string | null;
   onAddMember: () => void;
+  onMemberUpdated?: (updatedMember: FitnessCenterMember) => void;
 }
 
 export function MembersTab({
@@ -22,6 +23,7 @@ export function MembersTab({
   visitorsLoading,
   visitorsError,
   onAddMember,
+  onMemberUpdated,
 }: MembersTabProps) {
   const [activeMemberSubTab, setActiveMemberSubTab] =
     useState<MemberSubTabId>("members");
@@ -132,6 +134,7 @@ export function MembersTab({
             members={filteredMembers}
             loading={loading}
             error={error}
+            onMemberUpdated={onMemberUpdated}
           />
         </div>
       )}

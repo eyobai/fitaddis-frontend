@@ -1,12 +1,25 @@
+"use client";
+
+import { useState } from "react";
 import type { FitnessCenterMember } from "./types";
+import { MemberDetailModal } from "./MemberDetailModal";
 
 interface MembersTableProps {
   members: FitnessCenterMember[];
   loading: boolean;
   error: string | null;
+  onMemberUpdated?: (updatedMember: FitnessCenterMember) => void;
 }
 
-export function MembersTable({ members, loading, error }: MembersTableProps) {
+export function MembersTable({ members, loading, error, onMemberUpdated }: MembersTableProps) {
+  const [selectedMember, setSelectedMember] = useState<FitnessCenterMember | null>(null);
+
+  const handleMemberUpdated = (updatedMember: FitnessCenterMember) => {
+    setSelectedMember(updatedMember);
+    if (onMemberUpdated) {
+      onMemberUpdated(updatedMember);
+    }
+  };
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -81,6 +94,7 @@ export function MembersTable({ members, loading, error }: MembersTableProps) {
   }
 
   return (
+    <>
     <table className="min-w-full">
       <thead>
         <tr className="border-b border-slate-100 bg-slate-50/50">
@@ -114,7 +128,8 @@ export function MembersTable({ members, loading, error }: MembersTableProps) {
           return (
             <tr
               key={member.member_id}
-              className="hover:bg-slate-50/50 transition-colors group"
+              onClick={() => setSelectedMember(member)}
+              className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
             >
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center gap-3">
@@ -181,5 +196,15 @@ export function MembersTable({ members, loading, error }: MembersTableProps) {
         })}
       </tbody>
     </table>
+
+    {/* Member Detail Modal */}
+    {selectedMember && (
+      <MemberDetailModal
+        member={selectedMember}
+        onClose={() => setSelectedMember(null)}
+        onMemberUpdated={handleMemberUpdated}
+      />
+    )}
+  </>
   );
 }

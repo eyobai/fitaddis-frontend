@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   fetchFitnessCenterMembers,
   FitnessCenterMembersResponse,
+  FitnessCenterMember,
 } from "@/lib/api/fitnessCenterService";
 
 export function useMembersController() {
@@ -68,9 +69,22 @@ export function useMembersController() {
     };
   }, []);
 
+  const updateMember = useCallback((updatedMember: FitnessCenterMember) => {
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        members: prev.members.map((member) =>
+          member.member_id === updatedMember.member_id ? updatedMember : member
+        ),
+      };
+    });
+  }, []);
+
   return {
     data,
     loading,
     error,
+    updateMember,
   };
 }

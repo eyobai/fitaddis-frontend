@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   fetchFitnessCenterOverdueMembers,
   FitnessCenterOverdueMember,
 } from "@/lib/api/fitnessCenterService";
 import { formatCurrency, formatDate, ToastMessage } from "../utils/billingUtils";
 import { PaymentConfirmModal } from "./PaymentConfirmModal";
+import { Search, X } from "lucide-react";
 
 interface OverdueMembersTabProps {
   fitnessCenterId: number | null;
@@ -23,6 +24,18 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
   const [selectedMember, setSelectedMember] = useState<FitnessCenterOverdueMember | null>(null);
   const [editableAmount, setEditableAmount] = useState("0");
   const [billingDate, setBillingDate] = useState(new Date().toISOString().slice(0, 10));
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter members based on search query
+  const filteredMembers = useMemo(() => {
+    if (!searchQuery.trim()) return overdueMembers;
+    const query = searchQuery.toLowerCase();
+    return overdueMembers.filter((member) => {
+      const fullName = `${member.first_name} ${member.last_name}`.toLowerCase();
+      const phone = member.phone_number?.toLowerCase() || "";
+      return fullName.includes(query) || phone.includes(query);
+    });
+  }, [overdueMembers, searchQuery]);
 
   useEffect(() => {
     if (!fitnessCenterId) return;
@@ -117,16 +130,42 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
   return (
     <>
       <section className="rounded-2xl bg-white border border-slate-200 shadow-sm">
-        <div className="flex flex-col gap-2 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Overdue Members</h2>
-            <p className="text-sm text-slate-500">
-              Members with pending invoices and their latest billing details.
+        <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Overdue Members</h2>
+              <p className="text-sm text-slate-500">
+                Members with pending invoices and their latest billing details.
+              </p>
+            </div>
+            <div className="rounded-full bg-red-50 px-4 py-1 text-sm font-semibold text-red-600">
+              {overdueLoading ? "Loading..." : `${totalOverdue} overdue`}
+            </div>
+          </div>
+          {/* Search Field */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name or phone number..."
+              className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <p className="text-xs text-slate-500">
+              Showing {filteredMembers.length} of {overdueMembers.length} members
             </p>
-          </div>
-          <div className="rounded-full bg-red-50 px-4 py-1 text-sm font-semibold text-red-600">
-            {overdueLoading ? "Loading..." : `${totalOverdue} overdue`}
-          </div>
+          )}
         </div>
 
         {overdueError ? (
@@ -164,14 +203,14 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
                       Loading overdue members...
                     </td>
                   </tr>
-                ) : overdueMembers.length === 0 ? (
+                ) : filteredMembers.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-6 text-center text-slate-500">
-                      No overdue members 🎉
+                      {searchQuery ? "No members match your search" : "No overdue members 🎉"}
                     </td>
                   </tr>
                 ) : (
-                  overdueMembers.map((member) => {
+                  filteredMembers.map((member) => {
                     const fullName = `${member.first_name} ${member.last_name}`;
                     return (
                       <tr key={`${member.billing_id}-${member.member_id}`} className="hover:bg-slate-50/60">
