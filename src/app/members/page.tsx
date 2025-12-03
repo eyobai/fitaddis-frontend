@@ -19,7 +19,7 @@ export default function MembersPage() {
   const [fitnessCenterId, setFitnessCenterId] = useState<number | null>(null);
   const [showAddMember, setShowAddMember] = useState(false);
 
-  const { data, loading, error, updateMember } = useMembersController();
+  const { data, loading, error, updateMember, refetch } = useMembersController();
   const visitors = useVisitorsController();
   const checkin = useCheckinController();
   const dailyCheckins = useDailyCheckinsController(fitnessCenterId);
@@ -73,6 +73,7 @@ export default function MembersPage() {
             visitorsError={visitors.error}
             onAddMember={() => setShowAddMember(true)}
             onMemberUpdated={updateMember}
+            onRefetch={refetch}
           />
         )}
 

@@ -26,6 +26,7 @@ interface MemberDetailModalProps {
   member: FitnessCenterMember;
   onClose: () => void;
   onMemberUpdated?: (updatedMember: FitnessCenterMember) => void;
+  onRefetch?: () => void;
 }
 
 interface EditableFields {
@@ -108,25 +109,28 @@ async function updateMember(memberId: number, data: Partial<EditableFields>): Pr
   }
 }
 
-export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDetailModalProps) {
+export function MemberDetailModal({ member, onClose, onMemberUpdated, onRefetch }: MemberDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [membershipPlans, setMembershipPlans] = useState<FitnessCenterMembershipPlansResponse | null>(null);
   
+  // Local state to track current member data (updates after save)
+  const [currentMember, setCurrentMember] = useState<FitnessCenterMember>(member);
+  
   const [formData, setFormData] = useState<EditableFields>({
-    firstName: member.first_name,
-    lastName: member.last_name,
-    gender: member.gender,
-    dateOfBirth: formatDateForInput(member.date_of_birth),
-    phoneNumber: member.phone_number,
-    email: member.email,
-    city: member.city,
-    specificLocation: member.specific_location,
-    membershipPlanId: member.membership_plan_id,
-    emergencyContactName: member.emergency_contact_name,
-    emergencyContactPhone: member.emergency_contact_phone,
-    emergencyContactRelation: member.emergency_contact_relation,
+    firstName: currentMember.first_name,
+    lastName: currentMember.last_name,
+    gender: currentMember.gender,
+    dateOfBirth: formatDateForInput(currentMember.date_of_birth),
+    phoneNumber: currentMember.phone_number,
+    email: currentMember.email,
+    city: currentMember.city,
+    specificLocation: currentMember.specific_location,
+    membershipPlanId: currentMember.membership_plan_id,
+    emergencyContactName: currentMember.emergency_contact_name,
+    emergencyContactPhone: currentMember.emergency_contact_phone,
+    emergencyContactRelation: currentMember.emergency_contact_relation,
   });
 
   // Load membership plans when editing starts
@@ -148,18 +152,18 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
 
   const hasChanges = () => {
     return (
-      formData.firstName !== member.first_name ||
-      formData.lastName !== member.last_name ||
-      formData.gender !== member.gender ||
-      formData.dateOfBirth !== formatDateForInput(member.date_of_birth) ||
-      formData.phoneNumber !== member.phone_number ||
-      formData.email !== member.email ||
-      formData.city !== member.city ||
-      formData.specificLocation !== member.specific_location ||
-      formData.membershipPlanId !== member.membership_plan_id ||
-      formData.emergencyContactName !== member.emergency_contact_name ||
-      formData.emergencyContactPhone !== member.emergency_contact_phone ||
-      formData.emergencyContactRelation !== member.emergency_contact_relation
+      formData.firstName !== currentMember.first_name ||
+      formData.lastName !== currentMember.last_name ||
+      formData.gender !== currentMember.gender ||
+      formData.dateOfBirth !== formatDateForInput(currentMember.date_of_birth) ||
+      formData.phoneNumber !== currentMember.phone_number ||
+      formData.email !== currentMember.email ||
+      formData.city !== currentMember.city ||
+      formData.specificLocation !== currentMember.specific_location ||
+      formData.membershipPlanId !== currentMember.membership_plan_id ||
+      formData.emergencyContactName !== currentMember.emergency_contact_name ||
+      formData.emergencyContactPhone !== currentMember.emergency_contact_phone ||
+      formData.emergencyContactRelation !== currentMember.emergency_contact_relation
     );
   };
 
@@ -173,27 +177,37 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
     setToast(null);
 
     try {
-      await updateMember(member.member_id, formData);
+      await updateMember(currentMember.member_id, formData);
       setToast({ type: "success", text: "Member updated successfully" });
       setIsEditing(false);
       
-      // Notify parent of update
+      // Create updated member object
+      const updatedMember: FitnessCenterMember = {
+        ...currentMember,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        gender: formData.gender,
+        date_of_birth: formData.dateOfBirth,
+        phone_number: formData.phoneNumber,
+        email: formData.email,
+        city: formData.city,
+        specific_location: formData.specificLocation,
+        membership_plan_id: formData.membershipPlanId,
+        emergency_contact_name: formData.emergencyContactName,
+        emergency_contact_phone: formData.emergencyContactPhone,
+        emergency_contact_relation: formData.emergencyContactRelation,
+      };
+      
+      // Update local modal state to reflect changes immediately
+      setCurrentMember(updatedMember);
+      
+      // Refetch member data from server to get the latest data
+      if (onRefetch) {
+        onRefetch();
+      }
+      
+      // Notify parent of update (for table UI update)
       if (onMemberUpdated) {
-        const updatedMember: FitnessCenterMember = {
-          ...member,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          gender: formData.gender,
-          date_of_birth: formData.dateOfBirth,
-          phone_number: formData.phoneNumber,
-          email: formData.email,
-          city: formData.city,
-          specific_location: formData.specificLocation,
-          membership_plan_id: formData.membershipPlanId,
-          emergency_contact_name: formData.emergencyContactName,
-          emergency_contact_phone: formData.emergencyContactPhone,
-          emergency_contact_relation: formData.emergencyContactRelation,
-        };
         onMemberUpdated(updatedMember);
       }
     } catch (error) {
@@ -205,18 +219,18 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
 
   const handleCancel = () => {
     setFormData({
-      firstName: member.first_name,
-      lastName: member.last_name,
-      gender: member.gender,
-      dateOfBirth: formatDateForInput(member.date_of_birth),
-      phoneNumber: member.phone_number,
-      email: member.email,
-      city: member.city,
-      specificLocation: member.specific_location,
-      membershipPlanId: member.membership_plan_id,
-      emergencyContactName: member.emergency_contact_name,
-      emergencyContactPhone: member.emergency_contact_phone,
-      emergencyContactRelation: member.emergency_contact_relation,
+      firstName: currentMember.first_name,
+      lastName: currentMember.last_name,
+      gender: currentMember.gender,
+      dateOfBirth: formatDateForInput(currentMember.date_of_birth),
+      phoneNumber: currentMember.phone_number,
+      email: currentMember.email,
+      city: currentMember.city,
+      specificLocation: currentMember.specific_location,
+      membershipPlanId: currentMember.membership_plan_id,
+      emergencyContactName: currentMember.emergency_contact_name,
+      emergencyContactPhone: currentMember.emergency_contact_phone,
+      emergencyContactRelation: currentMember.emergency_contact_relation,
     });
     setIsEditing(false);
   };
@@ -224,7 +238,7 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
   const fullName = `${formData.firstName} ${formData.lastName}`;
   const initials = `${formData.firstName[0] || ""}${formData.lastName[0] || ""}`.toUpperCase();
   const age = formData.dateOfBirth ? calculateAge(formData.dateOfBirth) : 0;
-  const billingStatus = member.latest_billing_status;
+  const billingStatus = currentMember.latest_billing_status;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -267,7 +281,7 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
                 <span>•</span>
                 <span>{age} years old</span>
                 <span>•</span>
-                <span>ID: {member.member_id}</span>
+                <span>ID: {currentMember.member_id}</span>
               </div>
             </div>
           </div>
@@ -275,11 +289,11 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
           {/* Quick Stats */}
           <div className="grid grid-cols-3 gap-4 mt-6">
             <div className="bg-white/10 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold">{member.total_check_ins}</div>
+              <div className="text-2xl font-bold">{currentMember.total_check_ins}</div>
               <div className="text-xs text-violet-200">Total Check-ins</div>
             </div>
             <div className="bg-white/10 rounded-lg p-3 text-center">
-              <div className="text-2xl font-bold">{member.duration_months}</div>
+              <div className="text-2xl font-bold">{currentMember.duration_months}</div>
               <div className="text-xs text-violet-200">Month Plan</div>
             </div>
             <div className="bg-white/10 rounded-lg p-3 text-center">
@@ -469,7 +483,7 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Check-in Code</p>
-                    <p className="font-medium text-slate-900 font-mono">{member.check_in_code}</p>
+                    <p className="font-medium text-slate-900 font-mono">{currentMember.check_in_code}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
@@ -478,7 +492,7 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Join Date</p>
-                    <p className="font-medium text-slate-900">{formatDate(member.join_date)}</p>
+                    <p className="font-medium text-slate-900">{formatDate(currentMember.join_date)}</p>
                   </div>
                 </div>
               </div>
@@ -490,7 +504,7 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Plan</p>
-                    <p className="font-medium text-slate-900">{member.membership_name}</p>
+                    <p className="font-medium text-slate-900">{currentMember.membership_name}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
@@ -499,7 +513,7 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Check-in Code</p>
-                    <p className="font-medium text-slate-900 font-mono">{member.check_in_code}</p>
+                    <p className="font-medium text-slate-900 font-mono">{currentMember.check_in_code}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
@@ -508,7 +522,7 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Join Date</p>
-                    <p className="font-medium text-slate-900">{formatDate(member.join_date)}</p>
+                    <p className="font-medium text-slate-900">{formatDate(currentMember.join_date)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
@@ -517,7 +531,7 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
                   </div>
                   <div>
                     <p className="text-xs text-slate-500">Referral Source</p>
-                    <p className="font-medium text-slate-900">{member.referral_source_name}</p>
+                    <p className="font-medium text-slate-900">{currentMember.referral_source_name}</p>
                   </div>
                 </div>
               </div>
@@ -532,15 +546,15 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 bg-slate-50 rounded-lg text-center">
                 <p className="text-xs text-slate-500 mb-1">Plan Price</p>
-                <p className="text-xl font-bold text-slate-900">{member.membership_price} ETB</p>
+                <p className="text-xl font-bold text-slate-900">{currentMember.membership_price} ETB</p>
               </div>
               <div className="p-4 bg-slate-50 rounded-lg text-center">
                 <p className="text-xs text-slate-500 mb-1">Latest Amount</p>
-                <p className="text-xl font-bold text-slate-900">{member.latest_billing_amount} ETB</p>
+                <p className="text-xl font-bold text-slate-900">{currentMember.latest_billing_amount} ETB</p>
               </div>
               <div className="p-4 bg-slate-50 rounded-lg text-center">
                 <p className="text-xs text-slate-500 mb-1">Billing Date</p>
-                <p className="text-lg font-semibold text-slate-900">{formatDate(member.latest_billing_date)}</p>
+                <p className="text-lg font-semibold text-slate-900">{formatDate(currentMember.latest_billing_date)}</p>
               </div>
             </div>
           </section>
@@ -556,7 +570,7 @@ export function MemberDetailModal({ member, onClose, onMemberUpdated }: MemberDe
               </div>
               <div>
                 <p className="text-xs text-slate-500">Last Check-in</p>
-                <p className="font-medium text-slate-900">{formatDateTime(member.last_check_in_time)}</p>
+                <p className="font-medium text-slate-900">{formatDateTime(currentMember.last_check_in_time)}</p>
               </div>
             </div>
           </section>

@@ -13,6 +13,7 @@ interface MembersTabProps {
   visitorsError: string | null;
   onAddMember: () => void;
   onMemberUpdated?: (updatedMember: FitnessCenterMember) => void;
+  onRefetch?: () => void;
 }
 
 export function MembersTab({
@@ -24,6 +25,7 @@ export function MembersTab({
   visitorsError,
   onAddMember,
   onMemberUpdated,
+  onRefetch,
 }: MembersTabProps) {
   const [activeMemberSubTab, setActiveMemberSubTab] =
     useState<MemberSubTabId>("members");
@@ -135,6 +137,7 @@ export function MembersTab({
             loading={loading}
             error={error}
             onMemberUpdated={onMemberUpdated}
+            onRefetch={onRefetch}
           />
         </div>
       )}

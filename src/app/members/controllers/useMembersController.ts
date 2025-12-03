@@ -12,62 +12,44 @@ export function useMembersController() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const getFitnessCenterId = useCallback(() => {
+    if (typeof window === "undefined") return null;
 
-    async function load() {
-      if (typeof window === "undefined") return;
+    const storedFitnessCenter = localStorage.getItem("fitnessCenter");
+    if (!storedFitnessCenter) return null;
 
-      const storedFitnessCenter = localStorage.getItem("fitnessCenter");
-      if (!storedFitnessCenter) {
-        setError("No fitness center selected");
-        setLoading(false);
-        return;
-      }
+    try {
+      const parsed = JSON.parse(storedFitnessCenter) as { id?: number };
+      return parsed.id || null;
+    } catch {
+      return null;
+    }
+  }, []);
 
-      let fitnessCenterId: number | null = null;
-      try {
-        const parsed = JSON.parse(storedFitnessCenter) as { id?: number };
-        if (parsed.id) {
-          fitnessCenterId = parsed.id;
-        }
-      } catch (e) {
-        console.error("Failed to parse fitnessCenter from localStorage", e);
-        setError("Unable to read fitness center information");
-        setLoading(false);
-        return;
-      }
-
-      if (!fitnessCenterId) {
-        setError("Invalid fitness center id");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const response = await fetchFitnessCenterMembers(fitnessCenterId);
-        if (isMounted) {
-          setData(response);
-          setError(null);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError("Unable to fetch members");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+  const fetchMembers = useCallback(async () => {
+    const fitnessCenterId = getFitnessCenterId();
+    
+    if (!fitnessCenterId) {
+      setError("No fitness center selected");
+      setLoading(false);
+      return;
     }
 
-    load();
+    try {
+      setLoading(true);
+      const response = await fetchFitnessCenterMembers(fitnessCenterId);
+      setData(response);
+      setError(null);
+    } catch {
+      setError("Unable to fetch members");
+    } finally {
+      setLoading(false);
+    }
+  }, [getFitnessCenterId]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
 
   const updateMember = useCallback((updatedMember: FitnessCenterMember) => {
     setData((prev) => {
@@ -86,5 +68,6 @@ export function useMembersController() {
     loading,
     error,
     updateMember,
+    refetch: fetchMembers,
   };
 }

@@ -9,9 +9,10 @@ interface MembersTableProps {
   loading: boolean;
   error: string | null;
   onMemberUpdated?: (updatedMember: FitnessCenterMember) => void;
+  onRefetch?: () => void;
 }
 
-export function MembersTable({ members, loading, error, onMemberUpdated }: MembersTableProps) {
+export function MembersTable({ members, loading, error, onMemberUpdated, onRefetch }: MembersTableProps) {
   const [selectedMember, setSelectedMember] = useState<FitnessCenterMember | null>(null);
 
   const handleMemberUpdated = (updatedMember: FitnessCenterMember) => {
@@ -203,6 +204,7 @@ export function MembersTable({ members, loading, error, onMemberUpdated }: Membe
         member={selectedMember}
         onClose={() => setSelectedMember(null)}
         onMemberUpdated={handleMemberUpdated}
+        onRefetch={onRefetch}
       />
     )}
   </>
