@@ -27,12 +27,6 @@ export function CircularPaymentStat({
   const circumference = 2 * Math.PI * normalizedRadius;
   const offset = circumference - (percent / 100) * circumference;
 
-  const formattedAmount = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(paid || 0);
-
   return (
     <div className="flex flex-col items-center justify-center">
       <div className="relative h-32 w-32">
@@ -60,8 +54,9 @@ export function CircularPaymentStat({
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-sm font-semibold text-slate-900">
-            {formattedAmount}
+            {new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(paid || 0)}
           </span>
+          <span className="text-xs text-slate-500">ETB</span>
         </div>
       </div>
       <p className="mt-2 text-xs text-slate-500">{label}</p>
