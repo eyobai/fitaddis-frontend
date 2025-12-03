@@ -5,12 +5,18 @@ import { useBillingAuth } from "./hooks/useBillingAuth";
 import { BillingOverviewTab } from "./components/BillingOverviewTab";
 import { OverdueMembersTab } from "./components/OverdueMembersTab";
 import { MessageMembersTab } from "./components/MessageMembersTab";
+import { BillingSkeleton } from "../components/PageSkeleton";
 
 type TabId = "overview" | "overdue" | "messages";
 
 export default function BillingPage() {
   const { fitnessCenterId } = useBillingAuth();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+
+  // Show skeleton while fitness center ID is loading
+  if (!fitnessCenterId) {
+    return <BillingSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">

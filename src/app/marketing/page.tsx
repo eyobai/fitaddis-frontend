@@ -12,6 +12,7 @@ import {
   FitnessCenterVisitor,
 } from "@/lib/api/fitnessCenterService";
 import { Send, Users, User, MessageSquare, CheckCircle2, Circle } from "lucide-react";
+import { MarketingSkeleton } from "../components/PageSkeleton";
 
 type MessageMode = "individual" | "bulk";
 type RecipientType = "members" | "visitors";
@@ -31,7 +32,6 @@ export default function MarketingPage() {
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [selectedRecipients, setSelectedRecipients] = useState<Recipient[]>([]);
   const [message, setMessage] = useState("");
-  const [sender, setSender] = useState("FitAddis");
   const [loading, setLoading] = useState(false);
   const [loadingRecipients, setLoadingRecipients] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -127,11 +127,6 @@ export default function MarketingPage() {
       return;
     }
 
-    if (!sender.trim()) {
-      setError("Please enter a sender name");
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
@@ -141,7 +136,6 @@ export default function MarketingPage() {
         await sendMemberSms({
           to: selectedRecipients[0].phone,
           message: message.trim(),
-          sender: sender.trim(),
         });
         setSuccess(`Message sent to ${selectedRecipients[0].name}`);
       } else {
@@ -149,7 +143,6 @@ export default function MarketingPage() {
         await sendBulkSms({
           recipients: phoneNumbers,
           message: message.trim(),
-          sender: sender.trim(),
         });
         setSuccess(`Message sent to ${selectedRecipients.length} recipients`);
       }
@@ -169,11 +162,7 @@ export default function MarketingPage() {
   );
 
   if (!fitnessCenter) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-slate-500">Loading...</p>
-      </div>
-    );
+    return <MarketingSkeleton />;
   }
 
   return (
@@ -368,20 +357,6 @@ export default function MarketingPage() {
           </div>
 
           <div className="p-6 space-y-4">
-            {/* Sender Name */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Sender Name
-              </label>
-              <input
-                type="text"
-                value={sender}
-                onChange={(e) => setSender(e.target.value)}
-                placeholder="e.g., FitAddis"
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-            </div>
-
             {/* Selected Recipients Preview */}
             {selectedRecipients.length > 0 && (
               <div>

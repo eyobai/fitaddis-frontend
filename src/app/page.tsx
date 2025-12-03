@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDashboardController } from "./dashboard/controllers/useDashboardController";
 import { CircularPaymentStat } from "./components/CircularPaymentStat";
+import { DashboardSkeleton } from "./components/PageSkeleton";
 
 export default function Home() {
   const router = useRouter();
@@ -52,6 +53,11 @@ export default function Home() {
   const paidPercent = data
     ? Math.round((data.totalPaidThisMonth / (data.totalPaidThisMonth + data.totalExpectedThisMonth || 1)) * 100)
     : 0;
+
+  // Show skeleton while loading
+  if (loading || !fitnessCenterId) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">

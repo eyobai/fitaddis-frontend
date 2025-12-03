@@ -58,7 +58,6 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
 
   // Shared state
   const [selectedMessageMemberIds, setSelectedMessageMemberIds] = useState<number[]>([]);
-  const [senderName, setSenderName] = useState("FitAddis");
   const [messageBody, setMessageBody] = useState(
     "Hi there! Your Fit Addis subscription payment is overdue. Please renew to keep enjoying your workouts.",
   );
@@ -220,7 +219,6 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
       await sendMemberSms({
         to: normalizePhoneNumber(member.phone_number),
         message: messageBody,
-        sender: senderName,
       });
       setMessageToast({
         type: "success",
@@ -246,7 +244,6 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
       await sendMemberSms({
         to: normalizePhoneNumber(member.phone_number),
         message: expiringMessageBody,
-        sender: senderName,
       });
       setMessageToast({
         type: "success",
@@ -287,7 +284,6 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
       await sendBulkSms({
         recipients,
         message: messageBody,
-        sender: senderName,
       });
       setMessageToast({
         type: "success",
@@ -329,7 +325,6 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
       await sendBulkSms({
         recipients,
         message: expiringMessageBody,
-        sender: senderName,
       });
       setMessageToast({
         type: "success",
@@ -494,39 +489,28 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
             </div>
           </div>
           <div className="p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Sender Name</label>
-                <input
-                  type="text"
-                  value={senderName}
-                  onChange={(e) => setSenderName(e.target.value)}
-                  placeholder="e.g., FitAddis"
-                  className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100"
-                />
-              </div>
-              <div className="flex items-end">
-                {selectedMessageMemberIds.length > 0 ? (
-                  <div className="w-full p-2.5 rounded-lg bg-violet-50 border border-violet-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-violet-600" />
-                      <span className="text-sm font-medium text-violet-700">
-                        {selectedMessageMemberIds.length} selected
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setSelectedMessageMemberIds([])}
-                      className="text-xs text-violet-600 hover:text-violet-700 font-medium"
-                    >
-                      Clear
-                    </button>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Recipients</label>
+              {selectedMessageMemberIds.length > 0 ? (
+                <div className="w-full p-2.5 rounded-lg bg-violet-50 border border-violet-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-violet-600" />
+                    <span className="text-sm font-medium text-violet-700">
+                      {selectedMessageMemberIds.length} selected
+                    </span>
                   </div>
-                ) : (
-                  <div className="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-center">
-                    <span className="text-sm text-slate-500">No members selected</span>
-                  </div>
-                )}
-              </div>
+                  <button
+                    onClick={() => setSelectedMessageMemberIds([])}
+                    className="text-xs text-violet-600 hover:text-violet-700 font-medium"
+                  >
+                    Clear
+                  </button>
+                </div>
+              ) : (
+                <div className="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-center">
+                  <span className="text-sm text-slate-500">No members selected</span>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Message</label>

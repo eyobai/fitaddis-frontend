@@ -11,6 +11,7 @@ import { PageHeader } from "./components/PageHeader";
 import { MembersTab } from "./components/MembersTab";
 import { CheckinTab } from "./components/CheckinTab";
 import { AddMemberModal } from "./components/AddMemberModal";
+import { MembersSkeleton } from "../components/PageSkeleton";
 import type { TabId } from "./components/types";
 
 export default function MembersPage() {
@@ -43,6 +44,11 @@ export default function MembersPage() {
       }
     }
   }, []);
+
+  // Show skeleton while loading initial data
+  if (loading && !data) {
+    return <MembersSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">

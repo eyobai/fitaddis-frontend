@@ -10,6 +10,7 @@ import {
   FitnessCenter,
 } from "@/lib/api/fitnessCenterService";
 import { Plus, Package } from "lucide-react";
+import { SettingsSkeleton } from "../components/PageSkeleton";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -94,11 +95,7 @@ export default function SettingsPage() {
   }
 
   if (!fitnessCenter) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-slate-500">Loading...</p>
-      </div>
-    );
+    return <SettingsSkeleton />;
   }
 
   return (

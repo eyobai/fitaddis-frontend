@@ -96,7 +96,7 @@ async function updateMember(memberId: number, data: Partial<EditableFields>): Pr
   };
 
   const res = await fetch(`http://localhost:3000/members/${memberId}`, {
-    method: "PUT",
+    method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },

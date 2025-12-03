@@ -648,7 +648,6 @@ export async function registerMember(
 export async function sendMemberSms(payload: {
   to: string;
   message: string;
-  sender: string;
 }): Promise<void> {
   const res = await fetch(`${BASE_URL}/sms/send`, {
     method: "POST",
@@ -674,7 +673,6 @@ export async function sendMemberSms(payload: {
 export async function sendBulkSms(payload: {
   recipients: string[];
   message: string;
-  sender: string;
 }): Promise<void> {
   const res = await fetch(`${BASE_URL}/sms/bulk-send`, {
     method: "POST",
