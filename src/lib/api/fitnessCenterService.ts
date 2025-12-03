@@ -35,6 +35,8 @@ export type FitnessCenter = {
   phone_number: string;
   email: string;
   created_at: string;
+  status: "active" | "inactive";
+  trial_end_date: string;
 };
 
 export type AuthResponse = {
@@ -709,6 +711,24 @@ export async function recordMemberCheckIn(
   if (!res.ok) {
     throw new Error("Failed to record check-in");
   }
+}
+
+export async function fetchFitnessCenterDetails(
+  fitnessCenterId: number,
+): Promise<FitnessCenter> {
+  const res = await fetch(`${BASE_URL}/fitness-center/${fitnessCenterId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch fitness center details");
+  }
+
+  const data = (await res.json()) as { fitnessCenter: FitnessCenter };
+  return data.fitnessCenter;
 }
 
 export async function loginFitnessCenter(

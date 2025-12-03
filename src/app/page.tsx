@@ -9,6 +9,7 @@ export default function Home() {
   const router = useRouter();
   const [fitnessCenterId, setFitnessCenterId] = useState<number | null>(null);
   const [centerName, setCenterName] = useState<string>("");
+  const [centerStatus, setCenterStatus] = useState<"active" | "inactive">("active");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -22,12 +23,15 @@ export default function Home() {
     const storedFitnessCenter = localStorage.getItem("fitnessCenter");
     if (storedFitnessCenter) {
       try {
-        const parsed = JSON.parse(storedFitnessCenter) as { id?: number; name?: string };
+        const parsed = JSON.parse(storedFitnessCenter) as { id?: number; name?: string; status?: "active" | "inactive" };
         if (parsed.id) {
           setFitnessCenterId(parsed.id);
         }
         if (parsed.name) {
           setCenterName(parsed.name);
+        }
+        if (parsed.status) {
+          setCenterStatus(parsed.status);
         }
       } catch (e) {
         console.error("Failed to parse fitnessCenter from localStorage", e);
@@ -64,10 +68,17 @@ export default function Home() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Live
-              </span>
+              {centerStatus === "inactive" ? (
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-sm font-medium border border-amber-200">
+                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                   Test Mode
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Live
+                </span>
+              )}
             </div>
           </div>
         </header>
