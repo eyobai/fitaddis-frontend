@@ -7,6 +7,9 @@ import {
   fetchFitnessCenterInactiveMembers,
   fetchFitnessCenterTotalPaid,
   fetchFitnessCenterTotalExpected,
+  fetchDailyCheckins,
+  fetchFitnessCenterOverdueMembers,
+  fetchExpiringMembers,
 } from "@/lib/api/fitnessCenterService";
 
 type RecentActivityItem = {
@@ -23,6 +26,9 @@ type DashboardData = {
   inactiveMembers: number;
   totalPaidThisMonth: number;
   totalExpectedThisMonth: number;
+  todayCheckins: number;
+  overdueMembers: number;
+  expiringMembers: number;
   recentActivity?: RecentActivityItem[];
 };
 
@@ -47,7 +53,9 @@ export function useDashboardController(fitnessCenterId: number = 0) {
         const startDate = startOfMonth.toISOString().slice(0, 10);
         const endDate = now.toISOString().slice(0, 10);
 
-        const [totalRes, activeRes, inactiveRes, totalPaidRes, totalExpectedRes] =
+        const todayDate = now.toISOString().slice(0, 10);
+
+        const [totalRes, activeRes, inactiveRes, totalPaidRes, totalExpectedRes, dailyCheckinsRes, overdueRes, expiringRes] =
           await Promise.all([
             fetchFitnessCenterTotalMembers(fitnessCenterId),
             fetchFitnessCenterActiveMembers(fitnessCenterId),
@@ -58,6 +66,9 @@ export function useDashboardController(fitnessCenterId: number = 0) {
               startDate,
               endDate,
             ),
+            fetchDailyCheckins(fitnessCenterId, todayDate),
+            fetchFitnessCenterOverdueMembers(fitnessCenterId),
+            fetchExpiringMembers(fitnessCenterId, 7),
           ]);
 
         if (isMounted) {
@@ -67,6 +78,9 @@ export function useDashboardController(fitnessCenterId: number = 0) {
             inactiveMembers: inactiveRes.inactiveMembers,
             totalPaidThisMonth: totalPaidRes.totalPaidAmount,
             totalExpectedThisMonth: totalExpectedRes.totalExpectedAmount,
+            todayCheckins: dailyCheckinsRes.members?.length ?? 0,
+            overdueMembers: overdueRes.totalOverdueMembers ?? 0,
+            expiringMembers: expiringRes.totalMembers ?? 0,
           });
           setError(null);
         }

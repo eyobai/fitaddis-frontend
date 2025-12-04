@@ -164,6 +164,66 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Secondary Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+          {/* Today's Check-ins */}
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200 hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl bg-blue-100 p-3">
+                <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Today&apos;s Check-ins</p>
+                {loading ? (
+                  <div className="mt-1 h-7 w-12 rounded bg-slate-100 animate-pulse" />
+                ) : (
+                  <p className="text-2xl font-bold text-slate-900">{data?.todayCheckins ?? 0}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Overdue Payments */}
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200 hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl bg-amber-100 p-3">
+                <svg className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Overdue Payments</p>
+                {loading ? (
+                  <div className="mt-1 h-7 w-12 rounded bg-slate-100 animate-pulse" />
+                ) : (
+                  <p className="text-2xl font-bold text-amber-600">{data?.overdueMembers ?? 0}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Expiring Soon */}
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200 hover:shadow-md transition-all">
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl bg-orange-100 p-3">
+                <svg className="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Expiring in 7 Days</p>
+                {loading ? (
+                  <div className="mt-1 h-7 w-12 rounded bg-slate-100 animate-pulse" />
+                ) : (
+                  <p className="text-2xl font-bold text-orange-600">{data?.expiringMembers ?? 0}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Payment Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Payment Overview Card */}
