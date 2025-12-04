@@ -89,6 +89,26 @@ export type CheckinFrequencyResponse = {
   avgCheckinsPerMember: number;
 };
 
+export type MostActiveMember = {
+  memberId: number;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  email: string;
+  checkInCode: string;
+  membershipPlanName: string;
+  checkinCount: number;
+  lastCheckin: string;
+};
+
+export type MostActiveMembersResponse = {
+  fitnessCenterId: number;
+  startDate: string;
+  endDate: string;
+  limit: number;
+  members: MostActiveMember[];
+};
+
 export type FitnessCenter = {
   id: number;
   name: string;
@@ -916,5 +936,29 @@ export async function fetchCheckinFrequency(
   }
 
   const data = (await res.json()) as CheckinFrequencyResponse;
+  return data;
+}
+
+export async function fetchMostActiveMembers(
+  fitnessCenterId: number,
+  startDate: string,
+  endDate: string,
+  limit: number = 10,
+): Promise<MostActiveMembersResponse> {
+  const url = `${BASE_URL}/fitness-center/${fitnessCenterId}/check-ins/most-active?startDate=${startDate}&endDate=${endDate}&limit=${limit}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to load most active members");
+  }
+
+  const data = (await res.json()) as MostActiveMembersResponse;
   return data;
 }

@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import {
   fetchCheckinFrequency,
+  fetchMostActiveMembers,
   CheckinFrequencyResponse,
+  MostActiveMember,
 } from "@/lib/api/fitnessCenterService";
 import {
   getDefaultRange,
@@ -18,6 +20,9 @@ import {
   Clock,
   Trophy,
   BarChart3,
+  Mail,
+  Phone,
+  Medal,
 } from "lucide-react";
 
 interface CheckinAnalyticsTabProps {
@@ -28,7 +33,9 @@ export function CheckinAnalyticsTab({ fitnessCenterId }: CheckinAnalyticsTabProp
   const [pendingRange, setPendingRange] = useState<DateRange>(() => getDefaultRange());
   const [appliedRange, setAppliedRange] = useState<DateRange>(() => getDefaultRange());
   const [frequencyData, setFrequencyData] = useState<CheckinFrequencyResponse | null>(null);
+  const [mostActiveMembers, setMostActiveMembers] = useState<MostActiveMember[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeLoading, setActiveLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,8 +45,10 @@ export function CheckinAnalyticsTab({ fitnessCenterId }: CheckinAnalyticsTabProp
 
     let isMounted = true;
     setLoading(true);
+    setActiveLoading(true);
     setError(null);
 
+    // Fetch frequency data
     fetchCheckinFrequency(fitnessCenterId, start, end)
       .then((data) => {
         if (isMounted) {
@@ -55,6 +64,20 @@ export function CheckinAnalyticsTab({ fitnessCenterId }: CheckinAnalyticsTabProp
         if (isMounted) setLoading(false);
       });
 
+    // Fetch most active members
+    fetchMostActiveMembers(fitnessCenterId, start, end, 10)
+      .then((data) => {
+        if (isMounted) {
+          setMostActiveMembers(data.members);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load most active members:", err);
+      })
+      .finally(() => {
+        if (isMounted) setActiveLoading(false);
+      });
+
     return () => {
       isMounted = false;
     };
@@ -62,6 +85,24 @@ export function CheckinAnalyticsTab({ fitnessCenterId }: CheckinAnalyticsTabProp
 
   const handleApplyRange = () => {
     setAppliedRange({ ...pendingRange });
+  };
+
+  const getMedalColor = (rank: number) => {
+    switch (rank) {
+      case 1: return "text-yellow-500";
+      case 2: return "text-slate-400";
+      case 3: return "text-amber-600";
+      default: return "text-slate-300";
+    }
+  };
+
+  const getRankBg = (rank: number) => {
+    switch (rank) {
+      case 1: return "bg-yellow-50 border-yellow-200";
+      case 2: return "bg-slate-50 border-slate-200";
+      case 3: return "bg-amber-50 border-amber-200";
+      default: return "bg-white border-slate-200";
+    }
   };
 
   return (
@@ -167,8 +208,100 @@ export function CheckinAnalyticsTab({ fitnessCenterId }: CheckinAnalyticsTabProp
         </p>
       </div>
 
+      {/* Most Active Members */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <Trophy className="h-5 w-5 text-amber-500" />
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Most Active Members</h3>
+              <p className="text-sm text-slate-500">Top 10 members by check-in count</p>
+            </div>
+          </div>
+        </div>
+
+        {activeLoading ? (
+          <div className="p-8">
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-4 animate-pulse">
+                  <div className="h-10 w-10 bg-slate-200 rounded-full" />
+                  <div className="flex-1">
+                    <div className="h-4 bg-slate-200 rounded w-32 mb-2" />
+                    <div className="h-3 bg-slate-200 rounded w-24" />
+                  </div>
+                  <div className="h-6 w-16 bg-slate-200 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : mostActiveMembers.length === 0 ? (
+          <div className="p-12 text-center">
+            <Trophy className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500">No check-in data available</p>
+            <p className="text-sm text-slate-400">Try adjusting your date range</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {mostActiveMembers.map((member, index) => {
+              const rank = index + 1;
+              return (
+                <div
+                  key={member.memberId}
+                  className={`flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors ${getRankBg(rank)} border-l-4`}
+                >
+                  {/* Rank */}
+                  <div className="flex items-center justify-center w-8">
+                    {rank <= 3 ? (
+                      <Medal className={`h-6 w-6 ${getMedalColor(rank)}`} />
+                    ) : (
+                      <span className="text-lg font-bold text-slate-400">#{rank}</span>
+                    )}
+                  </div>
+
+                  {/* Avatar */}
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-violet-100 text-sm font-semibold text-violet-600">
+                    {member.firstName[0]}{member.lastName[0]}
+                  </div>
+
+                  {/* Member Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-900 truncate">
+                      {member.firstName} {member.lastName}
+                    </p>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                        <Phone className="h-3 w-3" />
+                        {member.phoneNumber}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs text-slate-500 truncate">
+                        <Mail className="h-3 w-3" />
+                        {member.email}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Plan */}
+                  <div className="hidden sm:block">
+                    <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                      {member.membershipPlanName}
+                    </span>
+                  </div>
+
+                  {/* Check-in Count */}
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-violet-600">{member.checkinCount}</p>
+                    <p className="text-xs text-slate-500">check-ins</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Coming Soon Features */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm opacity-60">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
@@ -193,19 +326,6 @@ export function CheckinAnalyticsTab({ fitnessCenterId }: CheckinAnalyticsTabProp
             </div>
           </div>
           <p className="text-sm text-slate-500">Daily, weekly, and monthly trends</p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm opacity-60">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
-              <Trophy className="h-5 w-5 text-slate-400" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-slate-900">Most Active</h4>
-              <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded">Coming Soon</span>
-            </div>
-          </div>
-          <p className="text-sm text-slate-500">Top members by check-in count</p>
         </div>
       </div>
     </section>
