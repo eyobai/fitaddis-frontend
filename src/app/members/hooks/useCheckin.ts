@@ -10,7 +10,7 @@ import {
 
 export type CheckinMode = "code" | "name";
 
-export function useCheckinController() {
+export function useCheckin() {
   const [mode, setMode] = useState<CheckinMode>("code");
   const [codeInput, setCodeInput] = useState("");
   const [nameInput, setNameInput] = useState("");

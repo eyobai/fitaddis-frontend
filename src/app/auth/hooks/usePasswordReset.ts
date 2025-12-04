@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { BASE_URL } from "@/lib/api/config";
 
 type Step = "request" | "verify" | "reset" | "success";
 
@@ -16,9 +17,7 @@ interface PasswordResetState {
   success: string | null;
 }
 
-const API_BASE = "http://localhost:3000";
-
-export function usePasswordResetController() {
+export function usePasswordReset() {
   const [state, setState] = useState<PasswordResetState>({
     step: "request",
     phoneNumber: "",
@@ -47,7 +46,7 @@ export function usePasswordResetController() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const res = await fetch(`${API_BASE}/request-password-reset`, {
+      const res = await fetch(`${BASE_URL}/request-password-reset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber: state.phoneNumber }),
@@ -89,7 +88,7 @@ export function usePasswordResetController() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const res = await fetch(`${API_BASE}/verify-password-reset-otp`, {
+      const res = await fetch(`${BASE_URL}/verify-password-reset-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -147,7 +146,7 @@ export function usePasswordResetController() {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const res = await fetch(`${API_BASE}/reset-password`, {
+      const res = await fetch(`${BASE_URL}/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

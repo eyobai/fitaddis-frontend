@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useDashboardController } from "./dashboard/controllers/useDashboardController";
+import { useDashboard } from "./dashboard/hooks/useDashboard";
 import { CircularPaymentStat } from "./components/CircularPaymentStat";
 import { DashboardSkeleton } from "./components/PageSkeleton";
 
@@ -40,7 +40,7 @@ export default function Home() {
     }
   }, [router]);
 
-  const { data, loading, error } = useDashboardController(fitnessCenterId ?? 0);
+  const { data, loading, error } = useDashboard(fitnessCenterId ?? 0);
 
   const formatCurrency = (num: number) => {
     return new Intl.NumberFormat("en-US", {

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMembersController } from "./controllers/useMembersController";
-import { useAddMemberController } from "./controllers/useAddMemberController";
-import { useCheckinController } from "./controllers/useCheckinController";
-import { useDailyCheckinsController } from "./controllers/useDailyCheckinsController";
-import { useVisitorsController } from "./controllers/useVisitorsController";
+import { useMembers } from "./hooks/useMembers";
+import { useAddMember } from "./hooks/useAddMember";
+import { useCheckin } from "./hooks/useCheckin";
+import { useDailyCheckins } from "./hooks/useDailyCheckins";
+import { useVisitors } from "./hooks/useVisitors";
 
 import { PageHeader } from "./components/PageHeader";
 import { MembersTab } from "./components/MembersTab";
@@ -19,11 +19,11 @@ export default function MembersPage() {
   const [fitnessCenterId, setFitnessCenterId] = useState<number | null>(null);
   const [showAddMember, setShowAddMember] = useState(false);
 
-  const { data, loading, error, updateMember, refetch } = useMembersController();
-  const visitors = useVisitorsController();
-  const checkin = useCheckinController();
-  const dailyCheckins = useDailyCheckinsController(fitnessCenterId);
-  const addMember = useAddMemberController(() => {
+  const { data, loading, error, updateMember, refetch } = useMembers();
+  const visitors = useVisitors();
+  const checkin = useCheckin();
+  const dailyCheckins = useDailyCheckins(fitnessCenterId);
+  const addMember = useAddMember(() => {
     if (typeof window !== "undefined") {
       window.location.reload();
     }

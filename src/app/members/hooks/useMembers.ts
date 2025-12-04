@@ -7,7 +7,7 @@ import {
   FitnessCenterMember,
 } from "@/lib/api/fitnessCenterService";
 
-export function useMembersController() {
+export function useMembers() {
   const [data, setData] = useState<FitnessCenterMembersResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

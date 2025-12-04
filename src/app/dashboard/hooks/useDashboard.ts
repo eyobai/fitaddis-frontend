@@ -32,7 +32,7 @@ type DashboardData = {
   recentActivity?: RecentActivityItem[];
 };
 
-export function useDashboardController(fitnessCenterId: number = 0) {
+export function useDashboard(fitnessCenterId: number = 0) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePasswordResetController } from "../auth/controllers/usePasswordResetController";
+import { usePasswordReset } from "../auth/hooks/usePasswordReset";
 import { ArrowLeft, Phone, KeyRound, Lock, CheckCircle2, Loader2 } from "lucide-react";
 
 export default function ForgotPasswordPage() {
@@ -19,7 +19,7 @@ export default function ForgotPasswordPage() {
     verifyOtp,
     resetPassword,
     goBack,
-  } = usePasswordResetController();
+  } = usePasswordReset();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">

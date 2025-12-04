@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useLoginController } from "../auth/controllers/useLoginController";
+import { useLogin } from "../auth/hooks/useLogin";
 
 export default function LoginPage() {
-  const { form, loading, error, handleChange, handleSubmit } = useLoginController();
+  const { form, loading, error, handleChange, handleSubmit } = useLogin();
 
   return (
     <div className="flex min-h-screen items-center justify-center">

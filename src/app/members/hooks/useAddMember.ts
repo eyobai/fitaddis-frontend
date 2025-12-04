@@ -4,15 +4,15 @@ import { useEffect, useState } from "react";
 import {
   fetchFitnessCenterMembershipPlans,
   FitnessCenterMembershipPlansResponse,
-  MembershipPlan,
   RegisterMemberPayload,
   registerMember,
 } from "@/lib/api/fitnessCenterService";
+import { BASE_URL } from "@/lib/api/config";
 
 export type MemberTypeOption = "member" | "visitor";
 export type RegistrationStep = "select-type" | "form";
 
-export function useAddMemberController(onSuccess?: () => void) {
+export function useAddMember(onSuccess?: () => void) {
   const [fitnessCenterId, setFitnessCenterId] = useState<number | null>(null);
   const [plansData, setPlansData] =
     useState<FitnessCenterMembershipPlansResponse | null>(null);
@@ -256,7 +256,7 @@ export function useAddMemberController(onSuccess?: () => void) {
 
       console.log("Visitor registration payload:", JSON.stringify(payload, null, 2));
       
-      const res = await fetch("http://localhost:3000/register-visitor", {
+      const res = await fetch(`${BASE_URL}/register-visitor`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

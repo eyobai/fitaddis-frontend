@@ -6,7 +6,7 @@ import {
   FitnessCenterVisitorsResponse,
 } from "@/lib/api/fitnessCenterService";
 
-export function useVisitorsController() {
+export function useVisitors() {
   const [data, setData] = useState<FitnessCenterVisitorsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

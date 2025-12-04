@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginFitnessCenter, LoginPayload, AuthResponse } from "@/lib/api/fitnessCenterService";
 
-export function useLoginController() {
+export function useLogin() {
   const router = useRouter();
   const [form, setForm] = useState<LoginPayload>({ email: "", password: "" });
   const [loading, setLoading] = useState(false);

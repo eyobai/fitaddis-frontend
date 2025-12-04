@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerFitnessCenter, RegisterPayload, AuthResponse } from "@/lib/api/fitnessCenterService";
 
-export function useRegisterController() {
+export function useRegister() {
   const router = useRouter();
   const [form, setForm] = useState<RegisterPayload>({
     name: "",

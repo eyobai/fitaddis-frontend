@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchDailyCheckins, DailyCheckinsResponse } from "@/lib/api/fitnessCenterService";
 
-export function useDailyCheckinsController(fitnessCenterId: number | null) {
+export function useDailyCheckins(fitnessCenterId: number | null) {
   const [date, setDate] = useState<string>(() => {
     const today = new Date();
     return today.toISOString().slice(0, 10);

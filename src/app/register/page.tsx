@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRegisterController } from "../auth/controllers/useRegisterController";
+import { useRegister } from "../auth/hooks/useRegister";
 
 export default function RegisterPage() {
-  const { form, loading, error, handleChange, handleSubmit } = useRegisterController();
+  const { form, loading, error, handleChange, handleSubmit } = useRegister();
 
   return (
     <div className="flex min-h-screen items-center justify-center">
