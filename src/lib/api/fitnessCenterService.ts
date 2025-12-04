@@ -80,6 +80,15 @@ export type DemographicsResponse = {
   details: DemographicDetail[];
 };
 
+export type CheckinFrequencyResponse = {
+  fitnessCenterId: number;
+  startDate: string;
+  endDate: string;
+  totalCheckins: number;
+  uniqueMembers: number;
+  avgCheckinsPerMember: number;
+};
+
 export type FitnessCenter = {
   id: number;
   name: string;
@@ -884,5 +893,28 @@ export async function fetchMemberDemographics(
   }
 
   const data = (await res.json()) as DemographicsResponse;
+  return data;
+}
+
+export async function fetchCheckinFrequency(
+  fitnessCenterId: number,
+  startDate: string,
+  endDate: string,
+): Promise<CheckinFrequencyResponse> {
+  const url = `${BASE_URL}/fitness-center/${fitnessCenterId}/check-ins/frequency?startDate=${startDate}&endDate=${endDate}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to load check-in frequency");
+  }
+
+  const data = (await res.json()) as CheckinFrequencyResponse;
   return data;
 }

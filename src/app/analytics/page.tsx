@@ -4,14 +4,16 @@ import { useState } from "react";
 import { useAnalyticsAuth } from "./hooks/useAnalyticsAuth";
 import { NewMembersTab } from "./components/NewMembersTab";
 import { DemographicsTab } from "./components/DemographicsTab";
-import { UserPlus, Users, PieChart } from "lucide-react";
+import { CheckinAnalyticsTab } from "./components/CheckinAnalyticsTab";
+import { UserPlus, Users, PieChart, Activity } from "lucide-react";
 
-type TabId = "new-members" | "retention" | "demographics";
+type TabId = "new-members" | "retention" | "demographics" | "checkins";
 
 const TABS = [
   { id: "new-members" as const, label: "New Members", icon: UserPlus },
-  { id: "retention" as const, label: "Retention Rate", icon: Users },
+  { id: "checkins" as const, label: "Check-ins", icon: Activity },
   { id: "demographics" as const, label: "Demographics", icon: PieChart },
+  { id: "retention" as const, label: "Retention Rate", icon: Users },
 ];
 
 export default function AnalyticsPage() {
@@ -96,6 +98,10 @@ export default function AnalyticsPage() {
 
         {activeTab === "demographics" && (
           <DemographicsTab fitnessCenterId={fitnessCenterId} />
+        )}
+
+        {activeTab === "checkins" && (
+          <CheckinAnalyticsTab fitnessCenterId={fitnessCenterId} />
         )}
       </div>
     </div>
