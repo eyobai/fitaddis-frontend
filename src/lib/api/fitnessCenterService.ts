@@ -66,6 +66,20 @@ export type NewMembersResponse = {
   members: NewMember[];
 };
 
+export type DemographicDetail = {
+  gender: string;
+  count: string;
+  age_group: string;
+};
+
+export type DemographicsResponse = {
+  fitnessCenterId: number;
+  totalMembers: number;
+  genderBreakdown: Record<string, number>;
+  ageBreakdown: Record<string, number>;
+  details: DemographicDetail[];
+};
+
 export type FitnessCenter = {
   id: number;
   name: string;
@@ -849,5 +863,26 @@ export async function fetchNewMembers(
   }
 
   const data = (await res.json()) as NewMembersResponse;
+  return data;
+}
+
+export async function fetchMemberDemographics(
+  fitnessCenterId: number,
+): Promise<DemographicsResponse> {
+  const url = `${BASE_URL}/fitness-center/${fitnessCenterId}/members/demographics`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to load member demographics");
+  }
+
+  const data = (await res.json()) as DemographicsResponse;
   return data;
 }
