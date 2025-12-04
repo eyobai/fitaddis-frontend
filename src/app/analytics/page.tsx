@@ -6,13 +6,15 @@ import { NewMembersTab } from "./components/NewMembersTab";
 import { DemographicsTab } from "./components/DemographicsTab";
 import { CheckinAnalyticsTab } from "./components/CheckinAnalyticsTab";
 import { MembershipPlanReportsTab } from "./components/MembershipPlanReportsTab";
-import { UserPlus, Users, PieChart, Activity, CreditCard } from "lucide-react";
+import { VisitorConversionTab } from "./components/VisitorConversionTab";
+import { UserPlus, Users, PieChart, Activity, CreditCard, UserCheck } from "lucide-react";
 
-type TabId = "new-members" | "retention" | "demographics" | "checkins" | "plans";
+type TabId = "new-members" | "retention" | "demographics" | "checkins" | "plans" | "conversion";
 
 const TABS = [
   { id: "new-members" as const, label: "New Members", icon: UserPlus },
   { id: "checkins" as const, label: "Check-ins", icon: Activity },
+  { id: "conversion" as const, label: "Visitor Conversion", icon: UserCheck },
   { id: "plans" as const, label: "Membership Plans", icon: CreditCard },
   { id: "demographics" as const, label: "Demographics", icon: PieChart },
   { id: "retention" as const, label: "Retention Rate", icon: Users },
@@ -108,6 +110,10 @@ export default function AnalyticsPage() {
 
         {activeTab === "plans" && (
           <MembershipPlanReportsTab fitnessCenterId={fitnessCenterId} />
+        )}
+
+        {activeTab === "conversion" && (
+          <VisitorConversionTab fitnessCenterId={fitnessCenterId} />
         )}
       </div>
     </div>

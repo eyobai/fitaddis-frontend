@@ -109,6 +109,29 @@ export type MostActiveMembersResponse = {
   members: MostActiveMember[];
 };
 
+export type ConvertedMember = {
+  visitor_id: number;
+  visitor_first_name: string;
+  visitor_last_name: string;
+  phone_number: string;
+  visited_at: string;
+  member_id: number;
+  member_first_name: string;
+  member_last_name: string;
+  join_date: string;
+  membership_plan_name: string;
+};
+
+export type VisitorConversionResponse = {
+  fitnessCenterId: number;
+  startDate: string;
+  endDate: string;
+  totalVisitors: number;
+  convertedVisitors: number;
+  conversionRate: number;
+  convertedMembers: ConvertedMember[];
+};
+
 export type FitnessCenter = {
   id: number;
   name: string;
@@ -960,5 +983,28 @@ export async function fetchMostActiveMembers(
   }
 
   const data = (await res.json()) as MostActiveMembersResponse;
+  return data;
+}
+
+export async function fetchVisitorConversionRate(
+  fitnessCenterId: number,
+  startDate: string,
+  endDate: string,
+): Promise<VisitorConversionResponse> {
+  const url = `${BASE_URL}/fitness-center/${fitnessCenterId}/visitors/conversion-rate?startDate=${startDate}&endDate=${endDate}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to load visitor conversion rate");
+  }
+
+  const data = (await res.json()) as VisitorConversionResponse;
   return data;
 }
