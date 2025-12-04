@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { fetchBirthdaysToday } from "@/lib/api/fitnessCenterService";
 
 const navItems = [
   {
@@ -41,6 +43,15 @@ const navItems = [
     ),
   },
   {
+    label: "Notifications",
+    href: "/notifications",
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+    ),
+  },
+  {
     label: "Marketing",
     href: "/marketing",
     icon: (
@@ -54,6 +65,30 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  useEffect(() => {
+    const checkNotifications = async () => {
+      try {
+        const storedFitnessCenter = localStorage.getItem("fitnessCenter");
+        if (!storedFitnessCenter) return;
+
+        const parsed = JSON.parse(storedFitnessCenter) as { id?: number };
+        if (!parsed.id) return;
+
+        const birthdayData = await fetchBirthdaysToday(parsed.id);
+        setNotificationCount(birthdayData.totalMembers || 0);
+      } catch (err) {
+        // Silently fail - don't show notification badge if API fails
+        console.error("Failed to fetch notifications:", err);
+      }
+    };
+
+    checkNotifications();
+    // Refresh every 5 minutes
+    const interval = setInterval(checkNotifications, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
@@ -87,6 +122,7 @@ export function Sidebar() {
           const isActive =
             (item.href === "/" && pathname === "/") ||
             (item.href !== "/" && pathname.startsWith(item.href));
+          const hasNotification = item.label === "Notifications" && notificationCount > 0;
 
           return (
             <Link
@@ -99,16 +135,26 @@ export function Sidebar() {
               }`}
             >
               <span
-                className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 ${
+                className={`relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200 ${
                   isActive
                     ? "bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-md shadow-violet-500/30"
                     : "bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-white"
                 }`}
               >
                 {item.icon}
+                {hasNotification && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-slate-900">
+                    {notificationCount > 9 ? "9+" : notificationCount}
+                  </span>
+                )}
               </span>
               <span>{item.label}</span>
-              {isActive && (
+              {hasNotification && !isActive && (
+                <span className="ml-auto flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                </span>
+              )}
+              {isActive && !hasNotification && (
                 <span className="ml-auto h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
               )}
             </Link>
