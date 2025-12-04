@@ -2,16 +2,15 @@
 
 import { useState } from "react";
 import { useBillingAuth } from "./hooks/useBillingAuth";
-import { BillingOverviewTab } from "./components/BillingOverviewTab";
 import { OverdueMembersTab } from "./components/OverdueMembersTab";
 import { MessageMembersTab } from "./components/MessageMembersTab";
 import { BillingSkeleton } from "../components/PageSkeleton";
 
-type TabId = "overview" | "overdue" | "messages";
+type TabId = "overdue" | "messages";
 
 export default function BillingPage() {
   const { fitnessCenterId, fitnessCenterName } = useBillingAuth();
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTab] = useState<TabId>("overdue");
 
   // Show skeleton while fitness center ID is loading
   if (!fitnessCenterId) {
@@ -29,16 +28,6 @@ export default function BillingPage() {
         </header>
 
         <div className="mb-6 flex flex-wrap gap-3 border-b border-slate-200 pb-2 text-sm font-semibold text-slate-500">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`rounded-full px-4 py-2 transition-all ${
-              activeTab === "overview"
-                ? "bg-slate-900 text-white shadow"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            Billing Overview
-          </button>
           <button
             onClick={() => setActiveTab("overdue")}
             className={`rounded-full px-4 py-2 transition-all ${
@@ -60,10 +49,6 @@ export default function BillingPage() {
             Message Members
           </button>
         </div>
-
-        {activeTab === "overview" && (
-          <BillingOverviewTab fitnessCenterId={fitnessCenterId} />
-        )}
 
         {activeTab === "overdue" && (
           <OverdueMembersTab fitnessCenterId={fitnessCenterId} />
