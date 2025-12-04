@@ -24,6 +24,8 @@ export function useLogin() {
       if (typeof window !== "undefined") {
         localStorage.setItem("authToken", response.token);
         localStorage.setItem("fitnessCenter", JSON.stringify(response.fitnessCenter));
+        // Dispatch custom event to notify Sidebar of auth change
+        window.dispatchEvent(new Event("authChange"));
       }
 
       router.push("/");

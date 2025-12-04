@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { fetchBirthdaysToday } from "@/lib/api/fitnessCenterService";
 
 const navItems = [
@@ -66,8 +66,43 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [notificationCount, setNotificationCount] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check authentication status
+  const checkAuthStatus = useCallback(() => {
+    if (typeof window === "undefined") return;
+    
+    const authToken = localStorage.getItem("authToken");
+    const fitnessCenter = localStorage.getItem("fitnessCenter");
+    setIsLoggedIn(Boolean(authToken && fitnessCenter));
+  }, []);
 
   useEffect(() => {
+    checkAuthStatus();
+
+    // Listen for storage changes (login/logout from other tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "authToken" || e.key === "fitnessCenter") {
+        checkAuthStatus();
+      }
+    };
+
+    // Listen for custom auth change event (login/logout in same tab)
+    const handleAuthChange = () => {
+      checkAuthStatus();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("authChange", handleAuthChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("authChange", handleAuthChange);
+    };
+  }, [checkAuthStatus]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
     const checkNotifications = async () => {
       try {
         const storedFitnessCenter = localStorage.getItem("fitnessCenter");
@@ -88,11 +123,14 @@ export function Sidebar() {
     // Refresh every 5 minutes
     const interval = setInterval(checkNotifications, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isLoggedIn]);
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("fitnessCenter");
+    setIsLoggedIn(false);
+    // Dispatch custom event to notify other components of auth change
+    window.dispatchEvent(new Event("authChange"));
     router.push("/login");
   };
 
@@ -123,6 +161,21 @@ export function Sidebar() {
             (item.href === "/" && pathname === "/") ||
             (item.href !== "/" && pathname.startsWith(item.href));
           const hasNotification = item.label === "Notifications" && notificationCount > 0;
+
+          // If not logged in, show disabled menu items
+          if (!isLoggedIn) {
+            return (
+              <div
+                key={item.label}
+                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 cursor-not-allowed opacity-50"
+              >
+                <span className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-slate-600">
+                  {item.icon}
+                </span>
+                <span>{item.label}</span>
+              </div>
+            );
+          }
 
           return (
             <Link
@@ -164,43 +217,69 @@ export function Sidebar() {
 
       {/* Bottom Section */}
       <div className="px-3 py-4 border-t border-slate-800/50">
-        {/* Settings Link */}
-        <Link
-          href="/settings"
-          className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-            pathname === "/settings"
-              ? "bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-white shadow-sm"
-              : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-          }`}
-        >
-          <span className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all ${
-            pathname === "/settings"
-              ? "bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-md shadow-violet-500/30"
-              : "bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-white"
-          }`}>
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </span>
-          <span>Settings</span>
-          {pathname === "/settings" && (
-            <span className="ml-auto h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
-          )}
-        </Link>
+        {/* Settings Link - only show when logged in */}
+        {isLoggedIn ? (
+          <Link
+            href="/settings"
+            className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+              pathname === "/settings"
+                ? "bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-white shadow-sm"
+                : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+            }`}
+          >
+            <span className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all ${
+              pathname === "/settings"
+                ? "bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-md shadow-violet-500/30"
+                : "bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-white"
+            }`}>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </span>
+            <span>Settings</span>
+            {pathname === "/settings" && (
+              <span className="ml-auto h-2 w-2 rounded-full bg-violet-400 animate-pulse" />
+            )}
+          </Link>
+        ) : (
+          <div className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 cursor-not-allowed opacity-50">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-slate-600">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </span>
+            <span>Settings</span>
+          </div>
+        )}
 
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          className="mt-1.5 w-full group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all duration-200 hover:bg-rose-500/10 hover:text-rose-400"
-        >
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-slate-400 transition-all group-hover:bg-rose-500/20 group-hover:text-rose-400">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </span>
-          <span>Log out</span>
-        </button>
+        {/* Login/Logout Button */}
+        {isLoggedIn ? (
+          <button
+            onClick={handleLogout}
+            className="mt-1.5 w-full group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all duration-200 hover:bg-rose-500/10 hover:text-rose-400"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-slate-400 transition-all group-hover:bg-rose-500/20 group-hover:text-rose-400">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </span>
+            <span>Log out</span>
+          </button>
+        ) : (
+          <Link
+            href="/login"
+            className="mt-1.5 w-full group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all duration-200 hover:bg-emerald-500/10 hover:text-emerald-400"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800 text-slate-400 transition-all group-hover:bg-emerald-500/20 group-hover:text-emerald-400">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              </svg>
+            </span>
+            <span>Log in</span>
+          </Link>
+        )}
       </div>
     </aside>
   );
