@@ -8,13 +8,15 @@ import { CheckinAnalyticsTab } from "./components/CheckinAnalyticsTab";
 import { MembershipPlanReportsTab } from "./components/MembershipPlanReportsTab";
 import { VisitorConversionTab } from "./components/VisitorConversionTab";
 import { BillingOverviewTab } from "../billing/components/BillingOverviewTab";
-import { UserPlus, Users, PieChart, Activity, CreditCard, UserCheck, DollarSign } from "lucide-react";
+import { NoCheckinMembersPanel } from "../members/components/NoCheckinMembersPanel";
+import { UserPlus, Users, PieChart, Activity, CreditCard, UserCheck, DollarSign, UserX } from "lucide-react";
 
-type TabId = "new-members" | "retention" | "demographics" | "checkins" | "plans" | "conversion" | "billing";
+type TabId = "new-members" | "retention" | "demographics" | "checkins" | "plans" | "conversion" | "billing" | "no-checkin";
 
 const TABS = [
   { id: "new-members" as const, label: "New Members", icon: UserPlus },
   { id: "checkins" as const, label: "Check-ins", icon: Activity },
+  { id: "no-checkin" as const, label: "No Check-ins", icon: UserX },
   { id: "conversion" as const, label: "Visitor Conversion", icon: UserCheck },
   { id: "plans" as const, label: "Membership Plans", icon: CreditCard },
   { id: "billing" as const, label: "Billing Overview", icon: DollarSign },
@@ -120,6 +122,10 @@ export default function AnalyticsPage() {
 
         {activeTab === "billing" && (
           <BillingOverviewTab fitnessCenterId={fitnessCenterId} />
+        )}
+
+        {activeTab === "no-checkin" && (
+          <NoCheckinMembersPanel />
         )}
       </div>
     </div>

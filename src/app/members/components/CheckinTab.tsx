@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { DailyCheckinsPanel } from "./DailyCheckinsPanel";
 import { MemberSelectionModal } from "./MemberSelectionModal";
-import { NoCheckinMembersPanel } from "./NoCheckinMembersPanel";
 import type { CheckinControllerReturn, DailyCheckinsControllerReturn } from "./types";
 
 interface CheckinTabProps {
@@ -16,7 +15,6 @@ export function CheckinTab({ checkin, dailyCheckins }: CheckinTabProps) {
   const [showNameResults, setShowNameResults] = useState(false);
 
   return (
-    <div className="space-y-6">
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
       {/* Check-in Panel */}
       <div className="lg:col-span-3 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -200,10 +198,6 @@ export function CheckinTab({ checkin, dailyCheckins }: CheckinTabProps) {
 
       {/* Daily Check-ins Panel */}
       <DailyCheckinsPanel dailyCheckins={dailyCheckins} />
-    </div>
-
-      {/* No Check-in Members Panel */}
-      <NoCheckinMembersPanel />
     </div>
   );
 }
