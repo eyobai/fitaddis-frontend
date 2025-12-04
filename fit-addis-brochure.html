@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fit Addis - Gym Management Platform</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+      min-height: 100vh;
+      padding: 40px;
+      color: #1e293b;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      color: white;
+      padding: 48px 40px;
+      text-align: center;
+    }
+    
+    .logo {
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      letter-spacing: -1px;
+    }
+    
+    .tagline {
+      font-size: 18px;
+      opacity: 0.95;
+      font-weight: 400;
+    }
+    
+    .content {
+      padding: 40px;
+    }
+    
+    .problem-section {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 32px;
+    }
+    
+    .problem-section h2 {
+      color: #dc2626;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+    
+    .problem-section ul {
+      list-style: none;
+      color: #7f1d1d;
+    }
+    
+    .problem-section li {
+      padding: 6px 0;
+      padding-left: 24px;
+      position: relative;
+    }
+    
+    .problem-section li::before {
+      content: "✗";
+      position: absolute;
+      left: 0;
+      color: #ef4444;
+      font-weight: bold;
+    }
+    
+    .solution-section h2 {
+      color: #059669;
+      font-size: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    
+    .features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    
+    .feature {
+      background: #f0fdf4;
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid #bbf7d0;
+    }
+    
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: #10b981;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 24px;
+    }
+    
+    .feature h3 {
+      font-size: 16px;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+    
+    .feature p {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    
+    .benefits {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: white;
+      padding: 32px;
+      border-radius: 16px;
+      margin-bottom: 32px;
+    }
+    
+    .benefits h2 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .benefit-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      text-align: center;
+    }
+    
+    .benefit-item {
+      padding: 16px;
+    }
+    
+    .benefit-number {
+      font-size: 36px;
+      font-weight: 800;
+      color: #10b981;
+      margin-bottom: 8px;
+    }
+    
+    .benefit-text {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .cta-section {
+      text-align: center;
+      padding: 32px;
+      background: #f8fafc;
+      border-radius: 16px;
+    }
+    
+    .cta-section h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: #1e293b;
+    }
+    
+    .cta-section p {
+      color: #64748b;
+      margin-bottom: 24px;
+    }
+    
+    .contact-info {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+    
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #059669;
+    }
+    
+    .footer {
+      text-align: center;
+      padding: 24px;
+      background: #f1f5f9;
+      color: #64748b;
+      font-size: 14px;
+    }
+    
+    @media print {
+      body {
+        padding: 0;
+        background: white;
+      }
+      
+      .container {
+        box-shadow: none;
+        border-radius: 0;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      .features {
+        grid-template-columns: 1fr;
+      }
+      
+      .benefit-list {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">💪 Fit Addis</div>
+      <div class="tagline">Smart Gym Member Management for Ethiopian Fitness Centers</div>
+    </div>
+    
+    <div class="content">
+      <div class="problem-section">
+        <h2>Are You Still Managing Your Gym Like This?</h2>
+        <ul>
+          <li>Tracking members with paper or spreadsheets</li>
+          <li>Forgetting who paid and who didn't</li>
+          <li>Wasting hours on manual calculations</li>
+          <li>Losing money from missed payments</li>
+          <li>No idea which members actually show up</li>
+        </ul>
+      </div>
+      
+      <div class="solution-section">
+        <h2>There's a Better Way ✨</h2>
+        
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">👥</div>
+            <h3>Member Management</h3>
+            <p>Add, search, and manage all your members in one place. Instant access to any member's profile.</p>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">💰</div>
+            <h3>Payment Tracking</h3>
+            <p>See who paid, who owes, and how much - all in Ethiopian Birr. No more guesswork.</p>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">📊</div>
+            <h3>Smart Dashboard</h3>
+            <p>Visual reports showing your revenue, collection rates, and business health at a glance.</p>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">📅</div>
+            <h3>Membership Plans</h3>
+            <p>Create custom plans - monthly, quarterly, yearly. The system tracks expiration automatically.</p>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">✅</div>
+            <h3>Attendance Tracking</h3>
+            <p>Know which members are active and which ones stopped coming. Retain more members.</p>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">🔔</div>
+            <h3>Payment Reminders</h3>
+            <p>Never chase payments manually again. The system identifies pending payments instantly.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="benefits">
+        <h2>What Gym Owners Are Seeing</h2>
+        <div class="benefit-list">
+          <div class="benefit-item">
+            <div class="benefit-number">5+</div>
+            <div class="benefit-text">Hours saved per week</div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-number">98%</div>
+            <div class="benefit-text">Payment collection rate</div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-number">0</div>
+            <div class="benefit-text">Lost member records</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="cta-section">
+        <h2>Ready to Modernize Your Gym?</h2>
+        <p>Get a free demo and see your gym data in the system within 15 minutes.</p>
+        <div class="contact-info">
+          <div class="contact-item">
+            📞 +251 9XX XXX XXX
+          </div>
+          <div class="contact-item">
+            ✉️ info@fitaddis.com
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      © 2024 Fit Addis • Built for Ethiopian Fitness Centers 🇪🇹
+    </div>
+  </div>
+</body>
+</html>

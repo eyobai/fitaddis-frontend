@@ -10,7 +10,7 @@ import { BillingSkeleton } from "../components/PageSkeleton";
 type TabId = "overview" | "overdue" | "messages";
 
 export default function BillingPage() {
-  const { fitnessCenterId } = useBillingAuth();
+  const { fitnessCenterId, fitnessCenterName } = useBillingAuth();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
 
   // Show skeleton while fitness center ID is loading
@@ -70,7 +70,7 @@ export default function BillingPage() {
         )}
 
         {activeTab === "messages" && (
-          <MessageMembersTab fitnessCenterId={fitnessCenterId} />
+          <MessageMembersTab fitnessCenterId={fitnessCenterId} fitnessCenterName={fitnessCenterName} />
         )}
       </div>
     </div>

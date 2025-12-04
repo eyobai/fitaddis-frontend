@@ -5,6 +5,8 @@ import { CircularPaymentStat } from "../../components/CircularPaymentStat";
 import {
   fetchFitnessCenterTotalExpected,
   fetchFitnessCenterTotalPaid,
+  fetchRevenueByPlan,
+  RevenueByPlanItem,
 } from "@/lib/api/fitnessCenterService";
 import { getDefaultRange, formatCurrency, DateRange } from "../utils/billingUtils";
 
@@ -16,6 +18,8 @@ export function BillingOverviewTab({ fitnessCenterId }: BillingOverviewTabProps)
   const [pendingRange, setPendingRange] = useState<DateRange>(() => getDefaultRange());
   const [appliedRange, setAppliedRange] = useState<DateRange>(() => getDefaultRange());
   const [stats, setStats] = useState({ paid: 0, expected: 0 });
+  const [revenueByPlan, setRevenueByPlan] = useState<RevenueByPlanItem[]>([]);
+  const [totalRevenue, setTotalRevenue] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rangeError, setRangeError] = useState<string | null>(null);
@@ -49,13 +53,20 @@ export function BillingOverviewTab({ fitnessCenterId }: BillingOverviewTabProps)
         startDate.toISOString().slice(0, 10),
         endDate.toISOString().slice(0, 10),
       ),
+      fetchRevenueByPlan(
+        fitnessCenterId,
+        startDate.toISOString().slice(0, 10),
+        endDate.toISOString().slice(0, 10),
+      ),
     ])
-      .then(([paidRes, expectedRes]) => {
+      .then(([paidRes, expectedRes, revenueRes]) => {
         if (!isMounted) return;
         setStats({
           paid: paidRes.totalPaidAmount,
           expected: expectedRes.totalExpectedAmount,
         });
+        setRevenueByPlan(revenueRes.plans);
+        setTotalRevenue(revenueRes.totalRevenue);
       })
       .catch(() => {
         if (!isMounted) return;
@@ -241,6 +252,68 @@ export function BillingOverviewTab({ fitnessCenterId }: BillingOverviewTabProps)
           )}
         </section>
       </div>
+
+      {/* Revenue by Plan Section */}
+      <section className="mt-6 rounded-2xl bg-white p-6 shadow-sm border border-slate-200">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Revenue by Membership Plan</h2>
+            <p className="text-sm text-slate-500">
+              {formattedRangeLabel || "Select a date range to view breakdown"}
+            </p>
+          </div>
+          <div className="rounded-lg bg-emerald-100 px-3 py-1.5 text-sm font-medium text-emerald-700">
+            {loading ? "Loading..." : `Total: ${formatCurrency(totalRevenue)}`}
+          </div>
+        </div>
+
+        {error ? (
+          <p className="text-sm text-rose-600">Unable to load revenue data</p>
+        ) : loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-500" />
+          </div>
+        ) : revenueByPlan.length === 0 ? (
+          <p className="text-sm text-slate-500 text-center py-8">No revenue data for this period</p>
+        ) : (
+          <div className="space-y-4">
+            {revenueByPlan.map((plan) => {
+              const revenue = parseFloat(plan.total_revenue) || 0;
+              const percentage = totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0;
+              return (
+                <div key={plan.membership_plan_id} className="rounded-xl border border-slate-100 p-4 hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-violet-100 p-2">
+                        <svg className="h-5 w-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">{plan.membership_plan_name}</p>
+                        <p className="text-xs text-slate-500">
+                          {formatCurrency(parseFloat(plan.plan_price))} / {plan.duration_months} month{plan.duration_months > 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-slate-900">{formatCurrency(revenue)}</p>
+                      <p className="text-xs text-slate-500">{plan.total_payments} payment{parseInt(plan.total_payments) !== 1 ? "s" : ""}</p>
+                    </div>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-600 transition-all duration-700 ease-out"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1 text-right">{percentage.toFixed(1)}% of total</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </>
   );
 }

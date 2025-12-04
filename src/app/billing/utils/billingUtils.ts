@@ -10,10 +10,8 @@ export function getDefaultRange() {
 
 export function formatCurrency(num: number) {
   return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "ETB",
     maximumFractionDigits: 0,
-  }).format(num || 0);
+  }).format(num || 0) + " ETB";
 }
 
 export function formatDate(iso: string) {

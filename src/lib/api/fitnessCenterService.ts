@@ -27,6 +27,45 @@ export type FitnessCenterTotalExpectedResponse = {
   totalExpectedAmount: number;
 };
 
+export type RevenueByPlanItem = {
+  membership_plan_id: number;
+  membership_plan_name: string;
+  plan_price: string;
+  duration_months: number;
+  total_payments: string;
+  total_revenue: string;
+};
+
+export type RevenueByPlanResponse = {
+  fitnessCenterId: number;
+  startDate: string;
+  endDate: string;
+  totalRevenue: number;
+  plans: RevenueByPlanItem[];
+};
+
+export type NewMember = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  gender: string;
+  date_of_birth: string;
+  phone_number: string;
+  email: string;
+  join_date: string;
+  city: string;
+  membership_plan_name: string;
+  membership_plan_price: string;
+};
+
+export type NewMembersResponse = {
+  fitnessCenterId: number;
+  startDate: string;
+  endDate: string;
+  totalNewMembers: number;
+  members: NewMember[];
+};
+
 export type FitnessCenter = {
   id: number;
   name: string;
@@ -764,5 +803,51 @@ export async function registerFitnessCenter(
   }
 
   const data = (await res.json()) as AuthResponse;
+  return data;
+}
+
+export async function fetchRevenueByPlan(
+  fitnessCenterId: number,
+  startDate: string,
+  endDate: string,
+): Promise<RevenueByPlanResponse> {
+  const url = `${BASE_URL}/fitness-center/${fitnessCenterId}/billings/revenue-by-plan?startDate=${startDate}&endDate=${endDate}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to load revenue by plan");
+  }
+
+  const data = (await res.json()) as RevenueByPlanResponse;
+  return data;
+}
+
+export async function fetchNewMembers(
+  fitnessCenterId: number,
+  startDate: string,
+  endDate: string,
+): Promise<NewMembersResponse> {
+  const url = `${BASE_URL}/fitness-center/${fitnessCenterId}/members/new?startDate=${startDate}&endDate=${endDate}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to load new members");
+  }
+
+  const data = (await res.json()) as NewMembersResponse;
   return data;
 }

@@ -39,9 +39,10 @@ type MessageMemberTabId = (typeof MESSAGE_MEMBER_TABS)[number]["id"];
 
 interface MessageMembersTabProps {
   fitnessCenterId: number | null;
+  fitnessCenterName: string;
 }
 
-export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
+export function MessageMembersTab({ fitnessCenterId, fitnessCenterName }: MessageMembersTabProps) {
   // Overdue members state
   const [messagePendingRange, setMessagePendingRange] = useState<DateRange>(() => getDefaultRange());
   const [messageAppliedRange, setMessageAppliedRange] = useState<DateRange>(() => getDefaultRange());
@@ -58,12 +59,20 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
 
   // Shared state
   const [selectedMessageMemberIds, setSelectedMessageMemberIds] = useState<number[]>([]);
-  const [messageBody, setMessageBody] = useState(
-    "Hi there! Your Fit Addis subscription payment is overdue. Please renew to keep enjoying your workouts.",
-  );
-  const [expiringMessageBody, setExpiringMessageBody] = useState(
-    "Hi there! Your Fit Addis membership is expiring soon. Please renew to continue enjoying your workouts.",
-  );
+  const [messageBody, setMessageBody] = useState("");
+  const [expiringMessageBody, setExpiringMessageBody] = useState("");
+
+  // Set default messages when fitness center name is available
+  useEffect(() => {
+    if (fitnessCenterName) {
+      setMessageBody(
+        `Hi there! Your ${fitnessCenterName} subscription payment is overdue. Please renew to keep enjoying your workouts.`
+      );
+      setExpiringMessageBody(
+        `Hi there! Your ${fitnessCenterName} membership is expiring soon. Please renew to continue enjoying your workouts.`
+      );
+    }
+  }, [fitnessCenterName]);
   const [messageToast, setMessageToast] = useState<ToastMessage>(null);
   const [sendingMemberId, setSendingMemberId] = useState<number | null>(null);
   const [sendingBulk, setSendingBulk] = useState(false);
@@ -590,9 +599,9 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
                         />
                       </th>
                       <th className="px-4 py-3">Member</th>
+                      <th className="px-4 py-3">Plan</th>
                       <th className="px-4 py-3">Amount</th>
                       <th className="px-4 py-3">Overdue</th>
-                      <th className="px-4 py-3 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -643,6 +652,12 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
                             </div>
                           </td>
                           <td className="px-4 py-3">
+                            <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                              {member.membership_plan_name}
+                            </span>
+                            <p className="text-xs text-slate-500 mt-0.5">{member.duration_months} month{member.duration_months > 1 ? "s" : ""}</p>
+                          </td>
+                          <td className="px-4 py-3">
                             <span className="font-semibold text-slate-900">{formatCurrency(Number(member.amount))}</span>
                             <p className="text-xs text-slate-500">{formatDate(member.billing_date)}</p>
                           </td>
@@ -656,16 +671,6 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
                             }`}>
                               {member.days_overdue ?? 0}d
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <button
-                              onClick={() => handleSendMemberMessage(member)}
-                              disabled={sendingMemberId === member.member_id}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-violet-100 px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                              <Send className="h-3 w-3" />
-                              {sendingMemberId === member.member_id ? "Sending..." : "Send"}
-                            </button>
                           </td>
                         </tr>
                       ))
@@ -686,8 +691,8 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
                       </th>
                       <th className="px-4 py-3">Member</th>
                       <th className="px-4 py-3">Plan</th>
+                      <th className="px-4 py-3">Amount</th>
                       <th className="px-4 py-3">Expires In</th>
-                      <th className="px-4 py-3 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -751,7 +756,11 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
                             <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                               {member.membership_plan_name}
                             </span>
-                            <p className="text-xs text-slate-500 mt-0.5">{formatDate(member.expiry_date)}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{member.duration_months} month{member.duration_months > 1 ? "s" : ""}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="font-semibold text-slate-900">{formatCurrency(Number(member.last_billing_amount))}</span>
+                            <p className="text-xs text-slate-500">{formatDate(member.last_billing_date)}</p>
                           </td>
                           <td className="px-4 py-3">
                             <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -763,16 +772,6 @@ export function MessageMembersTab({ fitnessCenterId }: MessageMembersTabProps) {
                             }`}>
                               {member.days_until_expiry?.days ?? "N/A"}d
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <button
-                              onClick={() => handleSendExpiringMemberMessage(member)}
-                              disabled={sendingMemberId === member.member_id}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-violet-100 px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                              <Send className="h-3 w-3" />
-                              {sendingMemberId === member.member_id ? "Sending..." : "Send"}
-                            </button>
                           </td>
                         </tr>
                       ))
