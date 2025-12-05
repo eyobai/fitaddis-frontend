@@ -17,7 +17,6 @@ import {
   TrendingUp,
   Calendar,
   Phone,
-  ArrowRight,
   Target,
 } from "lucide-react";
 
@@ -247,48 +246,30 @@ export function VisitorConversionTab({ fitnessCenterId }: VisitorConversionTabPr
             <table className="min-w-full divide-y divide-slate-100">
               <thead className="bg-slate-50">
                 <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th className="px-4 py-3">Visitor</th>
-                  <th className="px-4 py-3">Visited</th>
-                  <th className="px-4 py-3"></th>
-                  <th className="px-4 py-3">Member</th>
-                  <th className="px-4 py-3">Joined</th>
-                  <th className="px-4 py-3">Plan</th>
+                  <th className="px-4 py-3">Full Name</th>
+                  <th className="px-4 py-3">Phone Number</th>
+                  <th className="px-4 py-3">Joined Date</th>
+                  <th className="px-4 py-3">Membership Plan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.convertedMembers.map((item, index) => (
-                  <tr key={`${item.visitor_id}-${item.member_id}-${index}`} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-600">
-                          {item.visitor_first_name[0]}{item.visitor_last_name[0]}
-                        </div>
-                        <div>
-                          <p className="font-medium text-slate-900">
-                            {item.visitor_first_name} {item.visitor_last_name}
-                          </p>
-                          <p className="text-xs text-slate-500 flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {item.phone_number}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm text-slate-600">{formatDate(item.visited_at)}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <ArrowRight className="h-5 w-5 text-emerald-500" />
-                    </td>
+                {data.convertedMembers.map((item) => (
+                  <tr key={item.member_id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-xs font-semibold text-emerald-600">
-                          {item.member_first_name[0]}{item.member_last_name[0]}
+                          {item.first_name?.[0] ?? ""}{item.last_name?.[0] ?? ""}
                         </div>
                         <p className="font-medium text-slate-900">
-                          {item.member_first_name} {item.member_last_name}
+                          {item.first_name} {item.last_name}
                         </p>
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-sm text-slate-600 flex items-center gap-1">
+                        <Phone className="h-3.5 w-3.5 text-slate-400" />
+                        {item.phone_number}
+                      </p>
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-sm text-slate-600">{formatDate(item.join_date)}</span>

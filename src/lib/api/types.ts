@@ -151,14 +151,10 @@ export type FitnessCenterVisitor = {
 };
 
 export type ConvertedMember = {
-  visitor_id: number;
-  visitor_first_name: string;
-  visitor_last_name: string;
-  phone_number: string;
-  visited_at: string;
   member_id: number;
-  member_first_name: string;
-  member_last_name: string;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
   join_date: string;
   membership_plan_name: string;
 };
