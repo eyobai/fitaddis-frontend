@@ -51,6 +51,26 @@ export async function sendPaymentDueNotifications(
   return data;
 }
 
+export async function sendPaymentDueToSelected(
+  fitnessCenterId: number,
+  memberIds: number[],
+): Promise<PaymentDueSendResponse> {
+  const url = `${BASE_URL}/fitness-center/${fitnessCenterId}/notifications/payment-due/send`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: defaultHeaders,
+    body: JSON.stringify({ memberIds }),
+  } as RequestInit);
+
+  if (!res.ok) {
+    throw new Error("Failed to send payment due notifications");
+  }
+
+  const data = (await res.json()) as PaymentDueSendResponse;
+  return data;
+}
+
 // ============================================
 // Birthday Notification APIs
 // ============================================

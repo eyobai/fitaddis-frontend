@@ -1,21 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNotificationsAuth } from "./hooks/useNotificationsAuth";
 import { PaymentDueTab } from "./components/PaymentDueTab";
 import { BirthdayTab } from "./components/BirthdayTab";
 import { CreditCard, Cake, Bell } from "lucide-react";
+import { fetchBirthdaysToday, fetchPaymentDuePreview } from "@/lib/api/fitnessCenterService";
 
 type TabId = "payment-due" | "birthdays";
 
-const TABS = [
-  { id: "payment-due" as const, label: "Payment Reminders", icon: CreditCard },
-  { id: "birthdays" as const, label: "Birthday Wishes", icon: Cake },
+interface Tab {
+  id: TabId;
+  label: string;
+  icon: typeof CreditCard;
+}
+
+const TABS: Tab[] = [
+  { id: "payment-due", label: "Payment Reminders", icon: CreditCard },
+  { id: "birthdays", label: "Birthday Wishes", icon: Cake },
 ];
 
 export default function NotificationsPage() {
   const { fitnessCenterId } = useNotificationsAuth();
   const [activeTab, setActiveTab] = useState<TabId>("payment-due");
+  const [paymentDueCount, setPaymentDueCount] = useState(0);
+  const [birthdayCount, setBirthdayCount] = useState(0);
+
+  useEffect(() => {
+    if (!fitnessCenterId) return;
+
+    const fetchCounts = async () => {
+      try {
+        const [paymentData, birthdayData] = await Promise.all([
+          fetchPaymentDuePreview(fitnessCenterId, 0, 7),
+          fetchBirthdaysToday(fitnessCenterId),
+        ]);
+        setPaymentDueCount(paymentData.totalMembers || 0);
+        setBirthdayCount(birthdayData.totalMembers || 0);
+      } catch (err) {
+        console.error("Failed to fetch notification counts:", err);
+      }
+    };
+
+    fetchCounts();
+  }, [fitnessCenterId]);
 
   // Show skeleton while fitness center ID is loading
   if (!fitnessCenterId) {
@@ -60,6 +88,7 @@ export default function NotificationsPage() {
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
+            const count = tab.id === "payment-due" ? paymentDueCount : birthdayCount;
 
             return (
               <button
@@ -73,6 +102,17 @@ export default function NotificationsPage() {
               >
                 <Icon className="h-4 w-4" />
                 {tab.label}
+                {count > 0 && (
+                  <span
+                    className={`ml-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold ${
+                      isActive
+                        ? "bg-white text-slate-900"
+                        : "bg-rose-500 text-white"
+                    }`}
+                  >
+                    {count > 99 ? "99+" : count}
+                  </span>
+                )}
               </button>
             );
           })}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   fetchPaymentDuePreview,
-  sendPaymentDueNotifications,
+  sendMemberSms,
   PaymentDueMember,
 } from "@/lib/api/fitnessCenterService";
 import {
@@ -23,7 +23,6 @@ interface PaymentDueTabProps {
 }
 
 export function PaymentDueTab({ fitnessCenterId }: PaymentDueTabProps) {
-  const [sendDays, setSendDays] = useState(3);
   const [members, setMembers] = useState<PaymentDueMember[]>([]);
   const [totalMembers, setTotalMembers] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -36,18 +35,19 @@ export function PaymentDueTab({ fitnessCenterId }: PaymentDueTabProps) {
   const minDays = 0;
   const maxDays = 7;
 
-  const loadPreview = async () => {
+  const loadPreview = async (clearMessages = true) => {
     if (!fitnessCenterId) return;
 
     setLoading(true);
-    setError(null);
-    setSuccess(null);
+    if (clearMessages) {
+      setError(null);
+      setSuccess(null);
+    }
 
     try {
       const data = await fetchPaymentDuePreview(fitnessCenterId, minDays, maxDays);
       setMembers(data.members);
       setTotalMembers(data.totalMembers);
-      setSelectedMembers(new Set(data.members.map((m) => m.memberId)));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load preview");
     } finally {
@@ -60,17 +60,32 @@ export function PaymentDueTab({ fitnessCenterId }: PaymentDueTabProps) {
   }, [fitnessCenterId]);
 
   const handleSendNotifications = async () => {
-    if (!fitnessCenterId) return;
+    if (!fitnessCenterId || selectedMembers.size === 0) return;
 
     setSending(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const data = await sendPaymentDueNotifications(fitnessCenterId, sendDays);
-      setSuccess(`Successfully sent ${data.notificationsSent} payment reminder(s)!`);
-      // Refresh the preview
-      await loadPreview();
+      // Get selected members data
+      const selectedMembersList = members.filter((m) =>
+        selectedMembers.has(m.memberId)
+      );
+
+      // Send SMS to each selected member
+      let sentCount = 0;
+      for (const member of selectedMembersList) {
+        await sendMemberSms({
+          to: member.phoneNumber,
+          message: member.previewMessage,
+        });
+        sentCount++;
+      }
+
+      setSuccess(`Successfully sent ${sentCount} payment reminder(s)!`);
+      // Clear selection and refresh the preview (keep success message)
+      setSelectedMembers(new Set());
+      await loadPreview(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send notifications");
     } finally {
@@ -180,38 +195,26 @@ export function PaymentDueTab({ fitnessCenterId }: PaymentDueTabProps) {
               Send Payment Reminders
             </h3>
             <p className="text-amber-100 text-sm mt-1">
-              Send SMS to members with payment due in specified days
+              Send SMS to {selectedMembers.size} selected member{selectedMembers.size !== 1 ? "s" : ""}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div>
-              <label className="block text-xs font-medium text-amber-100 mb-1">Days until due</label>
-              <input
-                type="number"
-                min={0}
-                value={sendDays}
-                onChange={(e) => setSendDays(parseInt(e.target.value) || 3)}
-                className="w-20 rounded-lg border-0 bg-white/20 px-3 py-2 text-sm text-white placeholder-white/60 focus:ring-2 focus:ring-white"
-              />
-            </div>
-            <button
-              onClick={handleSendNotifications}
-              disabled={sending || totalMembers === 0}
-              className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-amber-600 hover:bg-amber-50 disabled:opacity-50 transition-colors flex items-center gap-2"
-            >
-              {sending ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  Send SMS
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={handleSendNotifications}
+            disabled={sending || selectedMembers.size === 0}
+            className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-amber-600 hover:bg-amber-50 disabled:opacity-50 transition-colors flex items-center gap-2"
+          >
+            {sending ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                Send SMS ({selectedMembers.size})
+              </>
+            )}
+          </button>
         </div>
       </div>
 
