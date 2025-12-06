@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import { fetchBirthdaysToday } from "@/lib/api/fitnessCenterService";
+import { fetchBirthdaysToday, fetchPaymentDuePreview } from "@/lib/api/fitnessCenterService";
 
 const navItems = [
   {
@@ -111,8 +111,15 @@ export function Sidebar() {
         const parsed = JSON.parse(storedFitnessCenter) as { id?: number };
         if (!parsed.id) return;
 
-        const birthdayData = await fetchBirthdaysToday(parsed.id);
-        setNotificationCount(birthdayData.totalMembers || 0);
+        // Fetch both birthday and payment due notifications
+        const [birthdayData, paymentDueData] = await Promise.all([
+          fetchBirthdaysToday(parsed.id),
+          fetchPaymentDuePreview(parsed.id, 0, 7),
+        ]);
+
+        const totalNotifications = 
+          (birthdayData.totalMembers || 0) + (paymentDueData.totalMembers || 0);
+        setNotificationCount(totalNotifications);
       } catch (err) {
         // Silently fail - don't show notification badge if API fails
         console.error("Failed to fetch notifications:", err);
