@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "./components/Sidebar";
 import { TrialGuard } from "./components/TrialGuard";
+import { NetworkStatus } from "@/components/NetworkStatus";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,6 +40,7 @@ export default function RootLayout({
             </div>
             <main className="flex-1 p-8 overflow-y-auto">{children}</main>
           </div>
+          <NetworkStatus />
         </TrialGuard>
       </body>
     </html>
