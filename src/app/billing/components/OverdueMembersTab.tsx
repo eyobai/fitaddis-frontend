@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   fetchFitnessCenterOverdueMembers,
   FitnessCenterOverdueMember,
@@ -8,7 +8,7 @@ import {
 import { formatCurrency, formatDate, ToastMessage } from "../utils/billingUtils";
 import { PaymentConfirmModal } from "./PaymentConfirmModal";
 import { Search, X, Send } from "lucide-react";
-import { sendMemberSms } from "@/lib/api/fitnessCenterService";
+import { sendOverdueSms, fetchOverdueMembers } from "@/lib/api/sms";
 
 interface OverdueMembersTabProps {
   fitnessCenterId: number | null;
@@ -27,6 +27,7 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<Set<number>>(new Set());
   const [sendingReminders, setSendingReminders] = useState(false);
+  const [smsContactStatus, setSmsContactStatus] = useState<Map<number, boolean>>(new Map());
 
   // Filter members based on search query
   const filteredMembers = useMemo(() => {
@@ -38,6 +39,13 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
       return fullName.includes(query) || phone.includes(query);
     });
   }, [overdueMembers, searchQuery]);
+
+  // Members who can be selected (not contacted today)
+  const selectableMembers = useMemo(() => {
+    return filteredMembers.filter(
+      (m) => !(smsContactStatus.get(m.member_id) ?? false)
+    );
+  }, [filteredMembers, smsContactStatus]);
 
   useEffect(() => {
     if (!fitnessCenterId) return;
@@ -139,31 +147,41 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
   };
 
   const toggleAll = () => {
-    if (selectedMembers.size === filteredMembers.length) {
+    if (selectedMembers.size === selectableMembers.length && selectableMembers.length > 0) {
       setSelectedMembers(new Set());
     } else {
-      setSelectedMembers(new Set(filteredMembers.map((m) => m.member_id)));
+      setSelectedMembers(new Set(selectableMembers.map((m) => m.member_id)));
     }
   };
 
+  const loadSmsContactStatus = useCallback(async () => {
+    if (!fitnessCenterId) return;
+    try {
+      const data = await fetchOverdueMembers(fitnessCenterId);
+      const statusMap = new Map<number, boolean>();
+      data.members.forEach((m) => {
+        statusMap.set(m.memberId, m.contactedToday);
+      });
+      setSmsContactStatus(statusMap);
+    } catch {
+      // Silently fail - contact status is optional
+    }
+  }, [fitnessCenterId]);
+
+  useEffect(() => {
+    loadSmsContactStatus();
+  }, [loadSmsContactStatus]);
+
   const handleSendReminders = async () => {
-    if (selectedMembers.size === 0) return;
+    if (selectedMembers.size === 0 || !fitnessCenterId) return;
 
     setSendingReminders(true);
     setPaymentMessage(null);
 
     try {
-      const selectedMembersList = overdueMembers.filter((m) =>
-        selectedMembers.has(m.member_id)
-      );
-
       let sentCount = 0;
-      for (const member of selectedMembersList) {
-        const message = `Dear ${member.first_name}, your payment of ${formatCurrency(Number(member.amount))} is overdue by ${member.days_overdue} days. Please make your payment as soon as possible. Thank you!`;
-        await sendMemberSms({
-          to: member.phone_number,
-          message,
-        });
+      for (const memberId of selectedMembers) {
+        await sendOverdueSms(fitnessCenterId, memberId);
         sentCount++;
       }
 
@@ -172,6 +190,8 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
         text: `Successfully sent ${sentCount} payment reminder(s)!`,
       });
       setSelectedMembers(new Set());
+      // Refresh contact status
+      await loadSmsContactStatus();
     } catch (err) {
       setPaymentMessage({
         type: "error",
@@ -252,7 +272,7 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
         {overdueError ? (
           <p className="px-6 py-5 text-sm text-rose-600">{overdueError}</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div>
             {paymentMessage && (
               <div
                 className={`mx-6 my-4 rounded-xl border px-4 py-3 text-sm font-medium ${
@@ -264,37 +284,37 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
                 {paymentMessage.text}
               </div>
             )}
-            <table className="min-w-full divide-y divide-slate-100">
+            <table className="w-full divide-y divide-slate-100 table-fixed">
               <thead>
                 <tr className="bg-slate-50/60 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th className="px-6 py-4 w-12">
+                  <th className="px-3 py-3 w-10">
                     <input
                       type="checkbox"
-                      checked={filteredMembers.length > 0 && selectedMembers.size === filteredMembers.length}
+                      checked={selectableMembers.length > 0 && selectedMembers.size === selectableMembers.length}
+                      disabled={selectableMembers.length === 0}
                       onChange={toggleAll}
-                      className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                      className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </th>
-                  <th className="px-6 py-4">Member</th>
-                  <th className="px-6 py-4">Phone</th>
-                  <th className="px-6 py-4">Plan</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Billing date</th>
-                  <th className="px-6 py-4">Days Passed</th>
-                  <th className="px-6 py-4 text-center">Actions</th>
+                  <th className="px-3 py-3">Member</th>
+                  <th className="px-3 py-3">Phone</th>
+                  <th className="px-3 py-3">Plan</th>
+                  <th className="px-3 py-3">Amount</th>
+                  <th className="px-3 py-3">Status</th>
+                  <th className="px-3 py-3">Billing Date</th>
+                  <th className="px-3 py-3">Days</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {overdueLoading ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-6 text-center text-slate-500">
+                    <td colSpan={8} className="px-6 py-6 text-center text-slate-500">
                       Loading overdue members...
                     </td>
                   </tr>
                 ) : filteredMembers.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-6 text-center text-slate-500">
+                    <td colSpan={8} className="px-6 py-6 text-center text-slate-500">
                       {searchQuery ? "No members match your search" : "No overdue members 🎉"}
                     </td>
                   </tr>
@@ -302,58 +322,58 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
                   filteredMembers.map((member) => {
                     const fullName = `${member.first_name} ${member.last_name}`;
                     const isSelected = selectedMembers.has(member.member_id);
+                    const wasContactedToday = smsContactStatus.get(member.member_id) ?? false;
                     return (
                       <tr 
                         key={`${member.billing_id}-${member.member_id}`} 
                         className={`hover:bg-slate-50/60 ${isSelected ? "bg-violet-50/50" : ""}`}
                       >
-                        <td className="px-6 py-4">
+                        <td className="px-3 py-3">
                           <input
                             type="checkbox"
                             checked={isSelected}
+                            disabled={wasContactedToday}
                             onChange={() => toggleMember(member.member_id)}
-                            className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                            className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </td>
-                        <td className="px-6 py-4 font-semibold text-slate-900">
-                          {fullName}
+                        <td className="px-3 py-3 font-semibold text-slate-900">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span className="truncate">{fullName}</span>
+                            {wasContactedToday && (
+                              <span className="inline-flex items-center rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
+                                Contacted
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs font-normal text-slate-400">ID: {member.member_id}</div>
                         </td>
-                        <td className="px-6 py-4 text-slate-600">{member.phone_number}</td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+                        <td className="px-3 py-3 text-slate-600 truncate">{member.phone_number}</td>
+                        <td className="px-3 py-3">
+                          <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-700 truncate max-w-full">
                             {member.membership_plan_name}
                           </span>
                         </td>
-                        <td className="px-6 py-4 font-semibold text-slate-900">
+                        <td className="px-3 py-3 font-semibold text-slate-900 whitespace-nowrap">
                           {formatCurrency(Number(member.amount))}
                         </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-amber-50 px-3 py-1 text-xs font-semibold capitalize text-amber-700">
-                            <span className="h-2 w-2 rounded-full bg-amber-500" />
+                        <td className="px-3 py-3">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-0.5 text-xs font-semibold capitalize text-amber-700">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                             {member.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-600">{formatDate(member.billing_date)}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                        <td className="px-3 py-3 text-slate-600 whitespace-nowrap">{formatDate(member.billing_date)}</td>
+                        <td className="px-3 py-3">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                             member.days_overdue > 30
                               ? "border border-red-100 bg-red-50 text-red-700"
                               : member.days_overdue > 14
                               ? "border border-amber-100 bg-amber-50 text-amber-700"
                               : "border border-slate-100 bg-slate-50 text-slate-700"
                           }`}>
-                            {member.days_overdue} days
+                            {member.days_overdue}d
                           </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <button
-                            onClick={() => openConfirmModal(member)}
-                            disabled={payingMemberId === member.member_id}
-                            className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-slate-400"
-                          >
-                            {payingMemberId === member.member_id ? "Processing..." : "Pay now"}
-                          </button>
                         </td>
                       </tr>
                     );
@@ -378,6 +398,7 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
           isProcessing={payingMemberId === selectedMember.member_id}
         />
       )}
+
     </>
   );
 }

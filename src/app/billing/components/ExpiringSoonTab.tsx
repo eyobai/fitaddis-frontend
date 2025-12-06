@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   fetchExpiringMembers,
   FitnessCenterExpiringMember,
@@ -8,7 +8,7 @@ import {
 import { formatCurrency, formatDate, ToastMessage } from "../utils/billingUtils";
 import { Search, X, Clock, Send } from "lucide-react";
 import { BASE_URL } from "@/lib/api/config";
-import { sendMemberSms } from "@/lib/api/fitnessCenterService";
+import { fetchExpiringMembersSms, sendExpiringSms } from "@/lib/api/sms";
 
 interface ExpiringSoonTabProps {
   fitnessCenterId: number | null;
@@ -22,6 +22,7 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<Set<number>>(new Set());
   const [sendingReminders, setSendingReminders] = useState(false);
+  const [smsContactStatus, setSmsContactStatus] = useState<Map<number, boolean>>(new Map());
 
   // Payment modal state
   const [selectedMember, setSelectedMember] = useState<FitnessCenterExpiringMember | null>(null);
@@ -40,6 +41,13 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
       return fullName.includes(query) || phone.includes(query);
     });
   }, [expiringMembers, searchQuery]);
+
+  // Members who can be selected (not contacted today)
+  const selectableMembers = useMemo(() => {
+    return filteredMembers.filter(
+      (m) => !(smsContactStatus.get(m.member_id) ?? false)
+    );
+  }, [filteredMembers, smsContactStatus]);
 
   useEffect(() => {
     if (!fitnessCenterId) return;
@@ -87,32 +95,41 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
   };
 
   const toggleAll = () => {
-    if (selectedMembers.size === filteredMembers.length) {
+    if (selectedMembers.size === selectableMembers.length && selectableMembers.length > 0) {
       setSelectedMembers(new Set());
     } else {
-      setSelectedMembers(new Set(filteredMembers.map((m) => m.member_id)));
+      setSelectedMembers(new Set(selectableMembers.map((m) => m.member_id)));
     }
   };
 
+  const loadSmsContactStatus = useCallback(async () => {
+    if (!fitnessCenterId) return;
+    try {
+      const data = await fetchExpiringMembersSms(fitnessCenterId);
+      const statusMap = new Map<number, boolean>();
+      data.members.forEach((m) => {
+        statusMap.set(m.memberId, m.contactedToday);
+      });
+      setSmsContactStatus(statusMap);
+    } catch {
+      // Silently fail - contact status is optional
+    }
+  }, [fitnessCenterId]);
+
+  useEffect(() => {
+    loadSmsContactStatus();
+  }, [loadSmsContactStatus]);
+
   const handleSendReminders = async () => {
-    if (selectedMembers.size === 0) return;
+    if (selectedMembers.size === 0 || !fitnessCenterId) return;
 
     setSendingReminders(true);
     setPaymentMessage(null);
 
     try {
-      const selectedMembersList = expiringMembers.filter((m) =>
-        selectedMembers.has(m.member_id)
-      );
-
       let sentCount = 0;
-      for (const member of selectedMembersList) {
-        const daysToExpire = member.days_until_expiry?.days ?? 0;
-        const message = `Dear ${member.first_name}, your membership expires in ${daysToExpire} day${daysToExpire !== 1 ? "s" : ""}. Please renew your membership to continue enjoying our services. Thank you!`;
-        await sendMemberSms({
-          to: member.phone_number,
-          message,
-        });
+      for (const memberId of selectedMembers) {
+        await sendExpiringSms(fitnessCenterId, memberId);
         sentCount++;
       }
 
@@ -121,6 +138,8 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
         text: `Successfully sent ${sentCount} reminder(s)!`,
       });
       setSelectedMembers(new Set());
+      // Refresh contact status
+      await loadSmsContactStatus();
     } catch (err) {
       setPaymentMessage({
         type: "error",
@@ -266,38 +285,38 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
       {error ? (
         <p className="px-6 py-5 text-sm text-rose-600">{error}</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-100">
+        <div>
+          <table className="w-full divide-y divide-slate-100">
             <thead>
               <tr className="bg-slate-50/60 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th className="px-6 py-4 w-12">
+                <th className="px-3 py-3 w-10">
                   <input
                     type="checkbox"
-                    checked={filteredMembers.length > 0 && selectedMembers.size === filteredMembers.length}
+                    checked={selectableMembers.length > 0 && selectedMembers.size === selectableMembers.length}
+                    disabled={selectableMembers.length === 0}
                     onChange={toggleAll}
-                    className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                    className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </th>
-                <th className="px-6 py-4">Member</th>
-                <th className="px-6 py-4">Phone</th>
-                <th className="px-6 py-4">Plan</th>
-                <th className="px-6 py-4">Amount</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Billing Date</th>
-                <th className="px-6 py-4">Days to Expire</th>
-                <th className="px-6 py-4 text-center">Actions</th>
+                <th className="px-3 py-3">Member</th>
+                <th className="px-3 py-3">Phone</th>
+                <th className="px-3 py-3">Plan</th>
+                <th className="px-3 py-3">Amount</th>
+                <th className="px-3 py-3">Status</th>
+                <th className="px-3 py-3">Billing Date</th>
+                <th className="px-3 py-3">Days to Expire</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-6 text-center text-slate-500">
+                  <td colSpan={8} className="px-6 py-6 text-center text-slate-500">
                     Loading expiring members...
                   </td>
                 </tr>
               ) : filteredMembers.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-6 text-center text-slate-500">
+                  <td colSpan={8} className="px-6 py-6 text-center text-slate-500">
                     {searchQuery ? "No members match your search" : "No members expiring soon 🎉"}
                   </td>
                 </tr>
@@ -306,51 +325,52 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
                   const fullName = `${member.first_name} ${member.last_name}`;
                   const daysToExpire = member.days_until_expiry?.days ?? 0;
                   const isSelected = selectedMembers.has(member.member_id);
+                  const wasContactedToday = smsContactStatus.get(member.member_id) ?? false;
                   return (
                     <tr 
                       key={member.member_id} 
                       className={`hover:bg-slate-50/60 ${isSelected ? "bg-violet-50/50" : ""}`}
                     >
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3">
                         <input
                           type="checkbox"
                           checked={isSelected}
+                          disabled={wasContactedToday}
                           onChange={() => toggleMember(member.member_id)}
-                          className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                          className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                       </td>
-                      <td className="px-6 py-4 font-semibold text-slate-900">
-                        {fullName}
+                      <td className="px-3 py-3 font-semibold text-slate-900">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="truncate">{fullName}</span>
+                          {wasContactedToday && (
+                            <span className="inline-flex items-center rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
+                              Contacted
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs font-normal text-slate-400">ID: {member.member_id}</div>
                       </td>
-                      <td className="px-6 py-4 text-slate-600">{member.phone_number}</td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+                      <td className="px-3 py-3 text-slate-600">{member.phone_number}</td>
+                      <td className="px-3 py-3">
+                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-700">
                           {member.membership_plan_name}
                         </span>
                       </td>
-                      <td className="px-6 py-4 font-semibold text-slate-900">
+                      <td className="px-3 py-3 font-semibold text-slate-900">
                         {formatCurrency(Number(member.last_billing_amount))}
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-semibold capitalize text-emerald-700">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <td className="px-3 py-3">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-xs font-semibold capitalize text-emerald-700">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                           {member.last_billing_status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-slate-600">{formatDate(member.last_billing_date)}</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold border ${getDaysToExpireColor(daysToExpire)}`}>
-                          {daysToExpire} days
+                      <td className="px-3 py-3 text-slate-600">{formatDate(member.last_billing_date)}</td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold border ${getDaysToExpireColor(daysToExpire)}`}>
+                          {daysToExpire}d
                         </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => openPaymentModal(member)}
-                          className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-slate-800 transition-colors"
-                        >
-                          Renew
-                        </button>
                       </td>
                     </tr>
                   );
