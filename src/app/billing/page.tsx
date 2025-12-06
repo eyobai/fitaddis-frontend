@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useBillingAuth } from "./hooks/useBillingAuth";
 import { OverdueMembersTab } from "./components/OverdueMembersTab";
+import { ExpiringSoonTab } from "./components/ExpiringSoonTab";
+import { MakePaymentTab } from "./components/MakePaymentTab";
 import { MessageMembersTab } from "./components/MessageMembersTab";
 import { BillingSkeleton } from "../components/PageSkeleton";
 
-type TabId = "overdue" | "messages";
+type TabId = "overdue" | "expiring" | "payment" | "messages";
 
 export default function BillingPage() {
   const { fitnessCenterId, fitnessCenterName } = useBillingAuth();
@@ -39,6 +41,26 @@ export default function BillingPage() {
             Overdue Members
           </button>
           <button
+            onClick={() => setActiveTab("expiring")}
+            className={`rounded-full px-4 py-2 transition-all ${
+              activeTab === "expiring"
+                ? "bg-slate-900 text-white shadow"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            Expiring Soon
+          </button>
+          <button
+            onClick={() => setActiveTab("payment")}
+            className={`rounded-full px-4 py-2 transition-all ${
+              activeTab === "payment"
+                ? "bg-slate-900 text-white shadow"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            Make Payment
+          </button>
+          <button
             onClick={() => setActiveTab("messages")}
             className={`rounded-full px-4 py-2 transition-all ${
               activeTab === "messages"
@@ -52,6 +74,14 @@ export default function BillingPage() {
 
         {activeTab === "overdue" && (
           <OverdueMembersTab fitnessCenterId={fitnessCenterId} />
+        )}
+
+        {activeTab === "expiring" && (
+          <ExpiringSoonTab fitnessCenterId={fitnessCenterId} />
+        )}
+
+        {activeTab === "payment" && (
+          <MakePaymentTab fitnessCenterId={fitnessCenterId} />
         )}
 
         {activeTab === "messages" && (

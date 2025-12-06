@@ -23,7 +23,6 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<FitnessCenterOverdueMember | null>(null);
   const [editableAmount, setEditableAmount] = useState("0");
-  const [billingDate, setBillingDate] = useState(new Date().toISOString().slice(0, 10));
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter members based on search query
@@ -66,15 +65,13 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
 
   const openConfirmModal = (member: FitnessCenterOverdueMember) => {
     setSelectedMember(member);
-    setEditableAmount(member.amount);
-    setBillingDate(new Date().toISOString().slice(0, 10));
+    setEditableAmount(String(member.amount));
     setShowConfirmModal(true);
   };
 
   const handlePayNow = async (
     member: FitnessCenterOverdueMember,
     overrideAmount?: string,
-    overrideBillingDate?: string,
   ) => {
     setPaymentMessage(null);
     setPayingMemberId(member.member_id);
@@ -83,7 +80,6 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
       const payload = {
         memberId: member.member_id,
         amount: Number(overrideAmount ?? member.amount),
-        billingDate: overrideBillingDate ?? new Date().toISOString().slice(0, 10),
         status: "paid" as const,
       };
 
@@ -122,7 +118,7 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
 
   const handleConfirmPayment = async () => {
     if (!selectedMember) return;
-    await handlePayNow(selectedMember, editableAmount, billingDate);
+    await handlePayNow(selectedMember, editableAmount);
     setShowConfirmModal(false);
     setSelectedMember(null);
   };
@@ -269,8 +265,6 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
           selectedMember={selectedMember}
           editableAmount={editableAmount}
           setEditableAmount={setEditableAmount}
-          billingDate={billingDate}
-          setBillingDate={setBillingDate}
           onConfirm={handleConfirmPayment}
           onCancel={() => {
             setShowConfirmModal(false);

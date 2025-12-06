@@ -6,8 +6,6 @@ interface PaymentConfirmModalProps {
   selectedMember: FitnessCenterOverdueMember;
   editableAmount: string;
   setEditableAmount: (amount: string) => void;
-  billingDate: string;
-  setBillingDate: (date: string) => void;
   onConfirm: () => void;
   onCancel: () => void;
   isProcessing: boolean;
@@ -17,8 +15,6 @@ export function PaymentConfirmModal({
   selectedMember,
   editableAmount,
   setEditableAmount,
-  billingDate,
-  setBillingDate,
   onConfirm,
   onCancel,
   isProcessing,
@@ -42,15 +38,6 @@ export function PaymentConfirmModal({
               min="0"
               value={editableAmount}
               onChange={(e) => setEditableAmount(e.target.value)}
-              className="mt-1 rounded-xl border border-slate-200 px-3 py-2 text-slate-900 shadow-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100"
-            />
-          </label>
-          <label className="flex flex-col text-sm font-medium text-slate-600">
-            Billing date
-            <input
-              type="date"
-              value={billingDate}
-              onChange={(e) => setBillingDate(e.target.value)}
               className="mt-1 rounded-xl border border-slate-200 px-3 py-2 text-slate-900 shadow-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100"
             />
           </label>
