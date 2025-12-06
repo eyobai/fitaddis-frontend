@@ -6,8 +6,9 @@ import {
   FitnessCenterExpiringMember,
 } from "@/lib/api/fitnessCenterService";
 import { formatCurrency, formatDate, ToastMessage } from "../utils/billingUtils";
-import { Search, X, Clock } from "lucide-react";
+import { Search, X, Clock, Send } from "lucide-react";
 import { BASE_URL } from "@/lib/api/config";
+import { sendMemberSms } from "@/lib/api/fitnessCenterService";
 
 interface ExpiringSoonTabProps {
   fitnessCenterId: number | null;
@@ -19,6 +20,8 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [totalExpiring, setTotalExpiring] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState<Set<number>>(new Set());
+  const [sendingReminders, setSendingReminders] = useState(false);
 
   // Payment modal state
   const [selectedMember, setSelectedMember] = useState<FitnessCenterExpiringMember | null>(null);
@@ -69,6 +72,63 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
     if (days <= 2) return "border-red-100 bg-red-50 text-red-700";
     if (days <= 5) return "border-amber-100 bg-amber-50 text-amber-700";
     return "border-emerald-100 bg-emerald-50 text-emerald-700";
+  };
+
+  const toggleMember = (memberId: number) => {
+    setSelectedMembers((prev) => {
+      const next = new Set(prev);
+      if (next.has(memberId)) {
+        next.delete(memberId);
+      } else {
+        next.add(memberId);
+      }
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedMembers.size === filteredMembers.length) {
+      setSelectedMembers(new Set());
+    } else {
+      setSelectedMembers(new Set(filteredMembers.map((m) => m.member_id)));
+    }
+  };
+
+  const handleSendReminders = async () => {
+    if (selectedMembers.size === 0) return;
+
+    setSendingReminders(true);
+    setPaymentMessage(null);
+
+    try {
+      const selectedMembersList = expiringMembers.filter((m) =>
+        selectedMembers.has(m.member_id)
+      );
+
+      let sentCount = 0;
+      for (const member of selectedMembersList) {
+        const daysToExpire = member.days_until_expiry?.days ?? 0;
+        const message = `Dear ${member.first_name}, your membership expires in ${daysToExpire} day${daysToExpire !== 1 ? "s" : ""}. Please renew your membership to continue enjoying our services. Thank you!`;
+        await sendMemberSms({
+          to: member.phone_number,
+          message,
+        });
+        sentCount++;
+      }
+
+      setPaymentMessage({
+        type: "success",
+        text: `Successfully sent ${sentCount} reminder(s)!`,
+      });
+      setSelectedMembers(new Set());
+    } catch (err) {
+      setPaymentMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to send reminders",
+      });
+    } finally {
+      setSendingReminders(false);
+    }
   };
 
   const openPaymentModal = (member: FitnessCenterExpiringMember) => {
@@ -133,9 +193,35 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
               Members whose membership expires within the next 7 days.
             </p>
           </div>
-          <div className="rounded-full bg-amber-50 px-4 py-1 text-sm font-semibold text-amber-600 flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            {loading ? "Loading..." : `${totalExpiring} expiring`}
+          <div className="flex items-center gap-3">
+            {selectedMembers.size > 0 && (
+              <>
+                <div className="rounded-full bg-violet-50 px-4 py-1 text-sm font-semibold text-violet-600">
+                  {selectedMembers.size} selected
+                </div>
+                <button
+                  onClick={handleSendReminders}
+                  disabled={sendingReminders}
+                  className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-semibold text-white shadow hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                >
+                  {sendingReminders ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      Send Reminder ({selectedMembers.size})
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+            <div className="rounded-full bg-amber-50 px-4 py-1 text-sm font-semibold text-amber-600 flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              {loading ? "Loading..." : `${totalExpiring} expiring`}
+            </div>
           </div>
         </div>
         {/* Search Field */}
@@ -184,6 +270,14 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
           <table className="min-w-full divide-y divide-slate-100">
             <thead>
               <tr className="bg-slate-50/60 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-4 w-12">
+                  <input
+                    type="checkbox"
+                    checked={filteredMembers.length > 0 && selectedMembers.size === filteredMembers.length}
+                    onChange={toggleAll}
+                    className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                  />
+                </th>
                 <th className="px-6 py-4">Member</th>
                 <th className="px-6 py-4">Phone</th>
                 <th className="px-6 py-4">Plan</th>
@@ -197,13 +291,13 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
             <tbody className="divide-y divide-slate-100 text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-6 text-center text-slate-500">
+                  <td colSpan={9} className="px-6 py-6 text-center text-slate-500">
                     Loading expiring members...
                   </td>
                 </tr>
               ) : filteredMembers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-6 text-center text-slate-500">
+                  <td colSpan={9} className="px-6 py-6 text-center text-slate-500">
                     {searchQuery ? "No members match your search" : "No members expiring soon 🎉"}
                   </td>
                 </tr>
@@ -211,8 +305,20 @@ export function ExpiringSoonTab({ fitnessCenterId }: ExpiringSoonTabProps) {
                 filteredMembers.map((member) => {
                   const fullName = `${member.first_name} ${member.last_name}`;
                   const daysToExpire = member.days_until_expiry?.days ?? 0;
+                  const isSelected = selectedMembers.has(member.member_id);
                   return (
-                    <tr key={member.member_id} className="hover:bg-slate-50/60">
+                    <tr 
+                      key={member.member_id} 
+                      className={`hover:bg-slate-50/60 ${isSelected ? "bg-violet-50/50" : ""}`}
+                    >
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleMember(member.member_id)}
+                          className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                        />
+                      </td>
                       <td className="px-6 py-4 font-semibold text-slate-900">
                         {fullName}
                         <div className="text-xs font-normal text-slate-400">ID: {member.member_id}</div>

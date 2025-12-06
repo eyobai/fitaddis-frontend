@@ -7,7 +7,8 @@ import {
 } from "@/lib/api/fitnessCenterService";
 import { formatCurrency, formatDate, ToastMessage } from "../utils/billingUtils";
 import { PaymentConfirmModal } from "./PaymentConfirmModal";
-import { Search, X } from "lucide-react";
+import { Search, X, Send } from "lucide-react";
+import { sendMemberSms } from "@/lib/api/fitnessCenterService";
 
 interface OverdueMembersTabProps {
   fitnessCenterId: number | null;
@@ -24,6 +25,8 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
   const [selectedMember, setSelectedMember] = useState<FitnessCenterOverdueMember | null>(null);
   const [editableAmount, setEditableAmount] = useState("0");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState<Set<number>>(new Set());
+  const [sendingReminders, setSendingReminders] = useState(false);
 
   // Filter members based on search query
   const filteredMembers = useMemo(() => {
@@ -123,6 +126,62 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
     setSelectedMember(null);
   };
 
+  const toggleMember = (memberId: number) => {
+    setSelectedMembers((prev) => {
+      const next = new Set(prev);
+      if (next.has(memberId)) {
+        next.delete(memberId);
+      } else {
+        next.add(memberId);
+      }
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedMembers.size === filteredMembers.length) {
+      setSelectedMembers(new Set());
+    } else {
+      setSelectedMembers(new Set(filteredMembers.map((m) => m.member_id)));
+    }
+  };
+
+  const handleSendReminders = async () => {
+    if (selectedMembers.size === 0) return;
+
+    setSendingReminders(true);
+    setPaymentMessage(null);
+
+    try {
+      const selectedMembersList = overdueMembers.filter((m) =>
+        selectedMembers.has(m.member_id)
+      );
+
+      let sentCount = 0;
+      for (const member of selectedMembersList) {
+        const message = `Dear ${member.first_name}, your payment of ${formatCurrency(Number(member.amount))} is overdue by ${member.days_overdue} days. Please make your payment as soon as possible. Thank you!`;
+        await sendMemberSms({
+          to: member.phone_number,
+          message,
+        });
+        sentCount++;
+      }
+
+      setPaymentMessage({
+        type: "success",
+        text: `Successfully sent ${sentCount} payment reminder(s)!`,
+      });
+      setSelectedMembers(new Set());
+    } catch (err) {
+      setPaymentMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to send reminders",
+      });
+    } finally {
+      setSendingReminders(false);
+    }
+  };
+
   return (
     <>
       <section className="rounded-2xl bg-white border border-slate-200 shadow-sm">
@@ -134,8 +193,34 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
                 Members with pending invoices and their latest billing details.
               </p>
             </div>
-            <div className="rounded-full bg-red-50 px-4 py-1 text-sm font-semibold text-red-600">
-              {overdueLoading ? "Loading..." : `${totalOverdue} overdue`}
+            <div className="flex items-center gap-3">
+              {selectedMembers.size > 0 && (
+                <>
+                  <div className="rounded-full bg-violet-50 px-4 py-1 text-sm font-semibold text-violet-600">
+                    {selectedMembers.size} selected
+                  </div>
+                  <button
+                    onClick={handleSendReminders}
+                    disabled={sendingReminders}
+                    className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-semibold text-white shadow hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                  >
+                    {sendingReminders ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Send Reminder ({selectedMembers.size})
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+              <div className="rounded-full bg-red-50 px-4 py-1 text-sm font-semibold text-red-600">
+                {overdueLoading ? "Loading..." : `${totalOverdue} overdue`}
+              </div>
             </div>
           </div>
           {/* Search Field */}
@@ -182,6 +267,14 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
             <table className="min-w-full divide-y divide-slate-100">
               <thead>
                 <tr className="bg-slate-50/60 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="px-6 py-4 w-12">
+                    <input
+                      type="checkbox"
+                      checked={filteredMembers.length > 0 && selectedMembers.size === filteredMembers.length}
+                      onChange={toggleAll}
+                      className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                    />
+                  </th>
                   <th className="px-6 py-4">Member</th>
                   <th className="px-6 py-4">Phone</th>
                   <th className="px-6 py-4">Plan</th>
@@ -195,21 +288,33 @@ export function OverdueMembersTab({ fitnessCenterId }: OverdueMembersTabProps) {
               <tbody className="divide-y divide-slate-100 text-sm">
                 {overdueLoading ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-6 text-center text-slate-500">
+                    <td colSpan={9} className="px-6 py-6 text-center text-slate-500">
                       Loading overdue members...
                     </td>
                   </tr>
                 ) : filteredMembers.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-6 text-center text-slate-500">
+                    <td colSpan={9} className="px-6 py-6 text-center text-slate-500">
                       {searchQuery ? "No members match your search" : "No overdue members 🎉"}
                     </td>
                   </tr>
                 ) : (
                   filteredMembers.map((member) => {
                     const fullName = `${member.first_name} ${member.last_name}`;
+                    const isSelected = selectedMembers.has(member.member_id);
                     return (
-                      <tr key={`${member.billing_id}-${member.member_id}`} className="hover:bg-slate-50/60">
+                      <tr 
+                        key={`${member.billing_id}-${member.member_id}`} 
+                        className={`hover:bg-slate-50/60 ${isSelected ? "bg-violet-50/50" : ""}`}
+                      >
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleMember(member.member_id)}
+                            className="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                          />
+                        </td>
                         <td className="px-6 py-4 font-semibold text-slate-900">
                           {fullName}
                           <div className="text-xs font-normal text-slate-400">ID: {member.member_id}</div>
