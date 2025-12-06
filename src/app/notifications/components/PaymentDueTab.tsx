@@ -23,8 +23,6 @@ interface PaymentDueTabProps {
 }
 
 export function PaymentDueTab({ fitnessCenterId }: PaymentDueTabProps) {
-  const [minDays, setMinDays] = useState(0);
-  const [maxDays, setMaxDays] = useState(7);
   const [sendDays, setSendDays] = useState(3);
   const [members, setMembers] = useState<PaymentDueMember[]>([]);
   const [totalMembers, setTotalMembers] = useState(0);
@@ -33,6 +31,10 @@ export function PaymentDueTab({ fitnessCenterId }: PaymentDueTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedMembers, setSelectedMembers] = useState<Set<number>>(new Set());
+
+  // Fixed range: 0 to 7 days
+  const minDays = 0;
+  const maxDays = 7;
 
   const loadPreview = async () => {
     if (!fitnessCenterId) return;
@@ -110,38 +112,10 @@ export function PaymentDueTab({ fitnessCenterId }: PaymentDueTabProps) {
 
   return (
     <section className="space-y-6">
-      {/* Filter Controls */}
+      {/* Header */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Preview Payment Due Reminders</h3>
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="flex-1 min-w-[120px]">
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Min Days</label>
-            <input
-              type="number"
-              min={0}
-              value={minDays}
-              onChange={(e) => setMinDays(parseInt(e.target.value) || 0)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-amber-500 focus:ring-amber-500"
-            />
-          </div>
-          <div className="flex-1 min-w-[120px]">
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">Max Days</label>
-            <input
-              type="number"
-              min={0}
-              value={maxDays}
-              onChange={(e) => setMaxDays(parseInt(e.target.value) || 7)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-amber-500 focus:ring-amber-500"
-            />
-          </div>
-          <button
-            onClick={loadPreview}
-            disabled={loading}
-            className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition-colors"
-          >
-            {loading ? "Loading..." : "Preview"}
-          </button>
-        </div>
+        <h3 className="text-lg font-semibold text-slate-900">Payment Due Reminders</h3>
+        <p className="text-sm text-slate-500 mt-1">Members with payments due within the next 7 days</p>
       </div>
 
       {/* Summary Cards */}
@@ -164,8 +138,8 @@ export function PaymentDueTab({ fitnessCenterId }: PaymentDueTabProps) {
               <Clock className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Preview Range</p>
-              <p className="text-xl font-bold text-slate-900">{minDays} - {maxDays} days</p>
+              <p className="text-sm font-medium text-slate-500">Due Within</p>
+              <p className="text-xl font-bold text-slate-900">7 days</p>
             </div>
           </div>
         </div>
